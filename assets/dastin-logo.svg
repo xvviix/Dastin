@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="لوگوی دستین">
+  <circle cx="60" cy="60" r="55" fill="#f7f1e6"/>
+  <circle cx="60" cy="60" r="49" fill="none" stroke="#d78d55" stroke-width="2"/>
+  <path d="M31 68c4 14 16 23 29 23s25-9 29-23H31Z" fill="#17261c"/>
+  <path d="M25 68h70" fill="none" stroke="#d78d55" stroke-width="4" stroke-linecap="round"/>
+  <path d="M39 64c0-16 9-28 21-28s21 12 21 28" fill="none" stroke="#17261c" stroke-width="6" stroke-linecap="round"/>
+  <path d="M58 30c-3-11 2-20 13-24 4 10 1 20-9 25" fill="#d78d55"/>
+  <path d="M60 31c6-7 8-14 9-20" fill="none" stroke="#17261c" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="60" cy="61" r="3" fill="#d78d55"/>
+</svg>

@@ -1,0 +1,69 @@
+{
+  "format": "dastin-public-catalogue",
+  "version": 1,
+  "exportedAt": "2026-08-02T00:00:00.000Z",
+  "settings": {
+    "instagramText": "@dastin.food",
+    "instagramUrl": "https://instagram.com/dastin.food",
+    "whatsappText": "واتساپ دستین",
+    "whatsappUrl": "https://wa.me/989000000000",
+    "telegramText": "@dastin_food",
+    "telegramUrl": "https://t.me/dastin_food",
+    "emailText": "hello@dastin.food",
+    "emailUrl": "hello@dastin.food"
+  },
+  "products": [
+    {
+      "id": "burger-smoky-mix",
+      "title": "برگر میکس دودی",
+      "category": "burger",
+      "price": "۳۴۰ هزار تومان",
+      "weight": "۲۵۰ گرم",
+      "copyright": "© DASTIN / تصویر اختصاصی",
+      "description": "برگر دست‌ساز با ترکیب گوشت تازه، ادویه‌های اختصاصی و عطر لطیف دود. برای آن شب‌هایی که یک برگر معمولی کافی نیست",
+      "imageId": "default-burger",
+      "imagePath": "assets/product-burger.jpg",
+      "order": 10,
+      "createdAt": 1704067200000
+    },
+    {
+      "id": "sausage-oak-smoked",
+      "title": "سوسیس دودی بلوط",
+      "category": "sausage",
+      "price": "۲۸۰ هزار تومان",
+      "weight": "۴۰۰ گرم",
+      "copyright": "© DASTIN / تصویر اختصاصی",
+      "description": "گوشت انتخاب‌شده، بافت دلچسب و دود آرام چوب طبیعی بلوط؛ مزه‌ای عمیق و ماندگار برای صبحانه و ساندویچ‌های جدی",
+      "imageId": "default-sausage",
+      "imagePath": "assets/product-sausage.jpg",
+      "order": 20,
+      "createdAt": 1704153600000
+    },
+    {
+      "id": "cake-pistachio",
+      "title": "کیک پسته و زعفران",
+      "category": "cake",
+      "price": "۳۹۰ هزار تومان",
+      "weight": "۷۰۰ گرم",
+      "copyright": "© DASTIN / تصویر اختصاصی",
+      "description": "کیک خانگی لطیف با پسته‌ی فراوان و زعفران خوش‌عطر؛ شیرینیِ متعادل برای عصرانه‌ای که باید کمی خاص‌تر باشد",
+      "imageId": "default-cake",
+      "imagePath": "assets/product-cake.jpg",
+      "order": 30,
+      "createdAt": 1704240000000
+    },
+    {
+      "id": "finger-food-party",
+      "title": "باکس دورهمی",
+      "category": "fingerfood",
+      "price": "۴۸۰ هزار تومان",
+      "weight": "۱۲۰۰ گرم",
+      "copyright": "© DASTIN / تصویر اختصاصی",
+      "description": "یک باکس پر از لقمه‌های کوچک و خوش‌رنگ که برای به اشتراک گذاشتن ساخته شده‌اند؛ تازه، مرتب و آماده‌ی مهمانی",
+      "imageId": "default-finger-food",
+      "imagePath": "assets/product-finger-food.jpg",
+      "order": 40,
+      "createdAt": 1704326400000
+    }
+  ]
+}
