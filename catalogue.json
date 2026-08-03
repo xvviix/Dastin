@@ -7,10 +7,23 @@
     "instagramUrl": "https://instagram.com/dastin.food",
     "whatsappText": "واتساپ دستین",
     "whatsappUrl": "https://wa.me/989000000000",
+    "baleText": "پیام‌رسان بله",
+    "baleUrl": "https://ble.ir/",
     "telegramText": "@dastin_food",
     "telegramUrl": "https://t.me/dastin_food",
     "emailText": "hello@dastin.food",
     "emailUrl": "hello@dastin.food"
+  },
+  "showcase": {
+    "headingFirst": "یک مزه،",
+    "headingAccent": "حالِ خوب",
+    "description": "از مهمانی‌های شلوغ تا یک عصرانه‌ی دو نفره، برای هر حال‌وهوایی چیزی خوش‌طعم داریم",
+    "cards": [
+      { "id": "cake", "label": "شیرین / لطیف", "title": "کیک های خوشمزه", "imageId": "", "imagePath": "assets/product-cake.jpg" },
+      { "id": "burger", "label": "آبدار / دست‌ساز", "title": "برگر های لذیذ", "imageId": "", "imagePath": "assets/product-burger.jpg" },
+      { "id": "coldcuts", "label": "تازه / دست‌ساز", "title": "سوسیس و کالباس خانگی", "imageId": "", "imagePath": "assets/product-cold-cuts.jpg" }
+    ],
+    "notes": ["کیک و شیرینی های رژیمی و فوق‌العاده", "برگر های لذیذ", "سوسیس و کالباس خانگی"]
   },
   "products": [
     {

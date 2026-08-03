@@ -76,9 +76,22 @@
           <form id="contact-settings-form" class="contact-settings-form">
             <div class="contact-setting"><strong>Instagram</strong><input id="setting-instagram-text" maxlength="120" placeholder="@username" /><input id="setting-instagram-url" maxlength="220" dir="ltr" placeholder="https://instagram.com/..." /></div>
             <div class="contact-setting"><strong>WhatsApp</strong><input id="setting-whatsapp-text" maxlength="120" placeholder="متن نمایش" /><input id="setting-whatsapp-url" maxlength="220" dir="ltr" placeholder="https://wa.me/..." /></div>
+            <div class="contact-setting"><strong>Bale</strong><input id="setting-bale-text" maxlength="120" placeholder="پیام‌رسان بله" /><input id="setting-bale-url" maxlength="220" dir="ltr" placeholder="https://ble.ir/..." /></div>
             <div class="contact-setting"><strong>Telegram</strong><input id="setting-telegram-text" maxlength="120" placeholder="@username" /><input id="setting-telegram-url" maxlength="220" dir="ltr" placeholder="https://t.me/..." /></div>
             <div class="contact-setting"><strong>Email</strong><input id="setting-email-text" maxlength="120" dir="ltr" placeholder="hello@example.com" /><input id="setting-email-url" maxlength="220" dir="ltr" placeholder="hello@example.com" /></div>
             <button class="button button--primary" type="submit">ذخیره راه‌های ارتباطی <b>←</b></button><p id="settings-status" class="settings-status" role="status"></p>
+          </form>
+        </section>
+
+        <section class="showcase-settings-panel" aria-labelledby="showcase-settings-title">
+          <div class="settings-heading"><p class="mini-label">SHOWCASE CONTROL</p><h2 id="showcase-settings-title">نمونه‌های صفحهٔ اول</h2><p>تیتر، توضیحات، سه کارت تصویری و متن‌های پایین آن‌ها را برای سکشن معرفی سایت تغییر دهید</p></div>
+          <form id="showcase-settings-form" class="showcase-settings-form">
+            <div class="showcase-copy-fields"><label>خط اول تیتر<input id="showcase-heading-first-input" maxlength="90" /></label><label>بخش رنگی تیتر<input id="showcase-heading-accent-input" maxlength="90" /></label><label class="showcase-description-field">توضیحات<textarea id="showcase-description-input" maxlength="400" rows="3"></textarea></label></div>
+            <div class="showcase-card-fields" data-editor-card="cake"><h3>کارت کیک</h3><label>زیرعنوان<input data-showcase-field="label" maxlength="80" /></label><label>عنوان<input data-showcase-field="title" maxlength="100" /></label><label>تصویر تازه <input data-showcase-field="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /></label><img class="showcase-editor-preview" alt="پیش‌نمایش کارت کیک" /></div>
+            <div class="showcase-card-fields" data-editor-card="burger"><h3>کارت برگر</h3><label>زیرعنوان<input data-showcase-field="label" maxlength="80" /></label><label>عنوان<input data-showcase-field="title" maxlength="100" /></label><label>تصویر تازه <input data-showcase-field="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /></label><img class="showcase-editor-preview" alt="پیش‌نمایش کارت برگر" /></div>
+            <div class="showcase-card-fields" data-editor-card="coldcuts"><h3>کارت سوسیس و کالباس</h3><label>زیرعنوان<input data-showcase-field="label" maxlength="80" /></label><label>عنوان<input data-showcase-field="title" maxlength="100" /></label><label>تصویر تازه <input data-showcase-field="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /></label><img class="showcase-editor-preview" alt="پیش‌نمایش کارت سوسیس و کالباس" /></div>
+            <div class="showcase-notes-fields"><label>متن پایین ۱<input data-showcase-note="0" maxlength="180" /></label><label>متن پایین ۲<input data-showcase-note="1" maxlength="180" /></label><label>متن پایین ۳<input data-showcase-note="2" maxlength="180" /></label></div>
+            <div class="showcase-save"><button class="button button--primary" type="submit">ذخیره سکشن معرفی <b>←</b></button><p id="showcase-status" class="settings-status" role="status"></p></div>
           </form>
         </section>
 

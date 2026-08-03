@@ -16,6 +16,7 @@
   let renderedCount = PAGE_SIZE;
   let pendingImage = null;
   let localPreviewURL = null;
+  let currentShowcase = null;
 
   function toFaNumber(value) { return new Intl.NumberFormat('fa-IR').format(value); }
   function setStatus(message, error = false) {
@@ -36,6 +37,7 @@
     try { await DastinStore.syncPublishedForAdmin(); } catch (_) { /* Offline preview falls back to local data. */ }
     refreshProducts();
     loadContactSettings();
+    loadShowcaseSettings();
   }
   async function digest(value) {
     if (!(window.crypto && crypto.subtle)) throw new Error('این مرورگر از ورود امن پشتیبانی نمی‌کند.');
@@ -182,6 +184,8 @@
       $('#setting-instagram-url').value = settings.instagramUrl;
       $('#setting-whatsapp-text').value = settings.whatsappText;
       $('#setting-whatsapp-url').value = settings.whatsappUrl;
+      $('#setting-bale-text').value = settings.baleText;
+      $('#setting-bale-url').value = settings.baleUrl;
       $('#setting-telegram-text').value = settings.telegramText;
       $('#setting-telegram-url').value = settings.telegramUrl;
       $('#setting-email-text').value = settings.emailText;
@@ -195,12 +199,66 @@
       const payload = {
         instagramText: $('#setting-instagram-text').value, instagramUrl: $('#setting-instagram-url').value,
         whatsappText: $('#setting-whatsapp-text').value, whatsappUrl: $('#setting-whatsapp-url').value,
+        baleText: $('#setting-bale-text').value, baleUrl: $('#setting-bale-url').value,
         telegramText: $('#setting-telegram-text').value, telegramUrl: $('#setting-telegram-url').value,
         emailText: $('#setting-email-text').value, emailUrl: $('#setting-email-url').value
       };
       button.disabled = true; status.classList.remove('is-error'); status.textContent = 'در حال ذخیره...';
       try { await DastinStore.saveSettings(payload); status.textContent = 'راه‌های ارتباطی ذخیره شد.'; }
       catch (error) { status.textContent = error.message || 'ذخیره انجام نشد.'; status.classList.add('is-error'); }
+      finally { button.disabled = false; }
+    });
+  }
+  function showcasePanel(id) { return document.querySelector('[data-editor-card="' + id + '"]'); }
+  async function loadShowcaseSettings() {
+    try {
+      currentShowcase = await DastinStore.getShowcase();
+      $('#showcase-heading-first-input').value = currentShowcase.headingFirst;
+      $('#showcase-heading-accent-input').value = currentShowcase.headingAccent;
+      $('#showcase-description-input').value = currentShowcase.description;
+      currentShowcase.cards.forEach(async card => {
+        const panel = showcasePanel(card.id); if (!panel) return;
+        $('[data-showcase-field="label"]', panel).value = card.label;
+        $('[data-showcase-field="title"]', panel).value = card.title;
+        const preview = $('.showcase-editor-preview', panel);
+        const url = await DastinStore.getImageURL(card.imageId, card.imagePath);
+        if (url) preview.src = url;
+      });
+      currentShowcase.notes.forEach((note, index) => { const input = document.querySelector('[data-showcase-note="' + index + '"]'); if (input) input.value = note; });
+    } catch (_) { $('#showcase-status').textContent = 'بارگذاری سکشن معرفی انجام نشد'; $('#showcase-status').classList.add('is-error'); }
+  }
+  function initShowcaseSettings() {
+    document.querySelectorAll('[data-showcase-field="image"]').forEach(input => {
+      input.addEventListener('change', event => {
+        const file = event.target.files && event.target.files[0]; if (!file) return;
+        const preview = $('.showcase-editor-preview', event.target.closest('[data-editor-card]'));
+        preview.src = URL.createObjectURL(file);
+      });
+    });
+    $('#showcase-settings-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!currentShowcase) return;
+      const button = event.currentTarget.querySelector('button'); const status = $('#showcase-status');
+      const draft = {
+        headingFirst: $('#showcase-heading-first-input').value,
+        headingAccent: $('#showcase-heading-accent-input').value,
+        description: $('#showcase-description-input').value,
+        cards: currentShowcase.cards.map(card => {
+          const panel = showcasePanel(card.id);
+          return { ...card, label: $('[data-showcase-field="label"]', panel).value, title: $('[data-showcase-field="title"]', panel).value };
+        }),
+        notes: [0, 1, 2].map(index => document.querySelector('[data-showcase-note="' + index + '"]').value)
+      };
+      const images = {}; button.disabled = true; status.classList.remove('is-error'); status.textContent = 'در حال آماده‌سازی و ذخیره...';
+      try {
+        for (const card of draft.cards) {
+          const file = $('[data-showcase-field="image"]', showcasePanel(card.id)).files[0];
+          if (file) images[card.id] = await DastinStore.optimizeImage(file);
+        }
+        currentShowcase = await DastinStore.saveShowcase(draft, images);
+        status.textContent = 'سکشن معرفی ذخیره شد';
+        await loadShowcaseSettings();
+      } catch (error) { status.textContent = error.message || 'ذخیره انجام نشد'; status.classList.add('is-error'); }
       finally { button.disabled = false; }
     });
   }
@@ -246,5 +304,5 @@
 
   $('#logout-button').addEventListener('click', () => { sessionStorage.removeItem(ACCESS_KEY); location.reload(); });
   loadMoreButton.addEventListener('click', () => { renderedCount += PAGE_SIZE; renderList(); });
-  initLogin(); initForm(); initContactSettings(); initBackup();
+  initLogin(); initForm(); initContactSettings(); initShowcaseSettings(); initBackup();
 }());

@@ -133,6 +133,26 @@
     });
     menu.querySelectorAll('a').forEach(link => link.addEventListener('click', () => { button.setAttribute('aria-expanded', 'false'); button.setAttribute('aria-label', 'باز کردن منو'); menu.classList.remove('is-open'); menu.setAttribute('aria-hidden', 'true'); }));
   }
+  async function applyShowcase(showcase) {
+    $('#showcase-heading-first').textContent = showcase.headingFirst;
+    $('#showcase-heading-accent').textContent = showcase.headingAccent;
+    $('#showcase-description').textContent = showcase.description;
+    await Promise.all(showcase.cards.map(async card => {
+      const element = document.querySelector('[data-showcase-card="' + card.id + '"]');
+      if (!element) return;
+      $('.showcase-card__label', element).textContent = card.label;
+      $('h3', element).textContent = card.title;
+      const image = $('img', element); image.alt = card.title;
+      const url = await DastinStore.getImageURL(card.imageId, card.imagePath);
+      if (url) image.src = url;
+    }));
+    const notes = $('#showcase-notes'); notes.replaceChildren();
+    showcase.notes.forEach((note, index) => {
+      const line = document.createElement('p'); const number = document.createElement('b');
+      number.textContent = new Intl.NumberFormat('fa-IR', { minimumIntegerDigits: 2, useGrouping: false }).format(index + 1);
+      line.append(number, document.createTextNode(' ' + note)); notes.append(line);
+    });
+  }
   function applyContactSettings(settings) {
     const assign = (id, text, href, isEmail = false) => {
       const link = document.getElementById(id);
@@ -143,6 +163,7 @@
     };
     assign('contact-instagram', settings.instagramText, settings.instagramUrl);
     assign('contact-whatsapp', settings.whatsappText, settings.whatsappUrl);
+    assign('contact-bale', settings.baleText, settings.baleUrl);
     assign('contact-telegram', settings.telegramText, settings.telegramUrl);
     assign('contact-email', settings.emailText, settings.emailUrl, true);
     const emailHref = settings.emailUrl && (settings.emailUrl.startsWith('mailto:') ? settings.emailUrl : 'mailto:' + settings.emailUrl);
@@ -152,7 +173,9 @@
     try {
       await DastinStore.init();
       products = await DastinStore.listForPublic();
-      applyContactSettings(await DastinStore.getSettingsForPublic());
+      const [settings, showcase] = await Promise.all([DastinStore.getSettingsForPublic(), DastinStore.getShowcaseForPublic()]);
+      applyContactSettings(settings);
+      await applyShowcase(showcase);
       resetGallery();
       initVirtualGallery();
     } catch (error) {

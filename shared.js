@@ -30,8 +30,20 @@
   const defaultSettings = {
     instagramText: '@dastin.food', instagramUrl: 'https://instagram.com/dastin.food',
     whatsappText: 'واتساپ دستین', whatsappUrl: 'https://wa.me/989000000000',
+    baleText: 'پیام‌رسان بله', baleUrl: 'https://ble.ir/',
     telegramText: '@dastin_food', telegramUrl: 'https://t.me/dastin_food',
     emailText: 'hello@dastin.food', emailUrl: 'hello@dastin.food'
+  };
+  const defaultShowcase = {
+    headingFirst: 'یک مزه،',
+    headingAccent: 'حالِ خوب',
+    description: 'از مهمانی‌های شلوغ تا یک عصرانه‌ی دو نفره، برای هر حال‌وهوایی چیزی خوش‌طعم داریم',
+    cards: [
+      { id: 'cake', label: 'شیرین / لطیف', title: 'کیک های خوشمزه', imageId: '', imagePath: 'assets/product-cake.jpg' },
+      { id: 'burger', label: 'آبدار / دست‌ساز', title: 'برگر های لذیذ', imageId: '', imagePath: 'assets/product-burger.jpg' },
+      { id: 'coldcuts', label: 'تازه / دست‌ساز', title: 'سوسیس و کالباس خانگی', imageId: '', imagePath: 'assets/product-cold-cuts.jpg' }
+    ],
+    notes: ['کیک و شیرینی های رژیمی و فوق‌العاده', 'برگر های لذیذ', 'سوسیس و کالباس خانگی']
   };
 
   let dbPromise;
@@ -106,6 +118,51 @@
     });
     return next;
   }
+  function normaliseShowcase(input) {
+    const source = input || {};
+    const sourceCards = Array.isArray(source.cards) ? source.cards : [];
+    return {
+      headingFirst: cleanText(source.headingFirst, 90) || defaultShowcase.headingFirst,
+      headingAccent: cleanText(source.headingAccent, 90) || defaultShowcase.headingAccent,
+      description: cleanText(source.description, 400) || defaultShowcase.description,
+      cards: defaultShowcase.cards.map(base => {
+        const card = sourceCards.find(item => item && item.id === base.id) || {};
+        const imageId = cleanText(card.imageId, 120);
+        const imagePath = cleanText(card.imagePath, 220);
+        return {
+          id: base.id,
+          label: cleanText(card.label, 80) || base.label,
+          title: cleanText(card.title, 100) || base.title,
+          imageId,
+          imagePath: imagePath || (imageId ? '' : base.imagePath)
+        };
+      }),
+      notes: defaultShowcase.notes.map((note, index) => cleanText((source.notes || [])[index], 180) || note)
+    };
+  }
+  async function getShowcase() {
+    await init();
+    const row = await transaction(['meta'], 'readonly', tx => requestAsPromise(tx.objectStore('meta').get('showcase')));
+    return normaliseShowcase(row && row.value);
+  }
+  async function saveShowcase(input, imageUpdates = {}) {
+    const next = normaliseShowcase(input);
+    await transaction(['meta', 'media'], 'readwrite', tx => {
+      next.cards.forEach(card => {
+        const image = imageUpdates[card.id];
+        if (image && image.blob instanceof Blob) {
+          const imageId = 'showcase-' + card.id;
+          clearImageCache(imageId);
+          card.imageId = imageId;
+          card.imagePath = '';
+          tx.objectStore('media').put({ id: imageId, blob: image.blob, name: image.name || (card.id + '.webp'), updatedAt: Date.now() });
+        }
+      });
+      tx.objectStore('meta').put({ key: 'showcase', value: next, updatedAt: Date.now() });
+      tx.objectStore('meta').put({ key: 'localChanges', value: true, updatedAt: Date.now() });
+    });
+    return next;
+  }
   async function markLocalChanges() {
     await transaction(['meta'], 'readwrite', tx => { tx.objectStore('meta').put({ key: 'localChanges', value: true, updatedAt: Date.now() }); });
   }
@@ -140,6 +197,12 @@
     const published = await fetchPublishedCatalogue();
     return published && published.settings ? { ...defaultSettings, ...published.settings } : getSettings();
   }
+  async function getShowcaseForPublic() {
+    await init();
+    if (await hasLocalChanges()) return getShowcase();
+    const published = await fetchPublishedCatalogue();
+    return normaliseShowcase(published && published.showcase);
+  }
   async function syncPublishedForAdmin() {
     await init();
     if (await hasLocalChanges()) return list();
@@ -156,6 +219,7 @@
       tx.objectStore('products').clear(); tx.objectStore('media').clear();
       safeProducts.forEach(product => tx.objectStore('products').put(product));
       tx.objectStore('meta').put({ key: 'settings', value: { ...defaultSettings, ...(published.settings || {}) }, updatedAt: Date.now() });
+      tx.objectStore('meta').put({ key: 'showcase', value: normaliseShowcase(published.showcase), updatedAt: Date.now() });
       tx.objectStore('meta').put({ key: 'seeded', value: true, seededAt: Date.now() });
     });
     return list();
@@ -305,34 +369,40 @@
   async function createBackup() {
     const products = await list();
     const settings = await getSettings();
+    const showcase = await getShowcase();
     const media = {};
-    for (const product of products) {
-      if (!defaultImages[product.imageId]) {
-        const record = await transaction(['media'], 'readonly', tx => requestAsPromise(tx.objectStore('media').get(product.imageId)));
-        if (record && record.blob) media[product.imageId] = { name: record.name, dataURL: await fileAsDataURL(record.blob) };
-      }
+    const mediaIds = [
+      ...products.filter(product => !defaultImages[product.imageId]).map(product => product.imageId),
+      ...showcase.cards.map(card => card.imageId).filter(Boolean)
+    ];
+    for (const imageId of new Set(mediaIds)) {
+      const record = await transaction(['media'], 'readonly', tx => requestAsPromise(tx.objectStore('media').get(imageId)));
+      if (record && record.blob) media[imageId] = { name: record.name, dataURL: await fileAsDataURL(record.blob) };
     }
-    return { format: 'dastin-catalogue', version: 2, exportedAt: new Date().toISOString(), products, settings, media };
+    return { format: 'dastin-catalogue', version: 3, exportedAt: new Date().toISOString(), products, settings, showcase, media };
   }
   async function createGitExport() {
     const products = await list();
     const settings = await getSettings();
+    const showcase = await getShowcase();
     const downloads = [];
-    for (const product of products) {
-      if (defaultImages[product.imageId]) {
-        product.imagePath = 'assets/' + defaultImages[product.imageId];
-      } else {
-        const media = await transaction(['media'], 'readonly', tx => requestAsPromise(tx.objectStore('media').get(product.imageId)));
-        if (media && media.blob) {
-          const filename = product.imageId + '.webp';
-          product.imagePath = 'assets/uploads/' + filename;
-          downloads.push({ filename, blob: media.blob });
-        } else if (!product.imagePath) {
-          throw new Error('فایل تصویر «' + product.title + '» پیدا نشد.');
-        }
+    const exportMedia = async (entry, label) => {
+      if (!entry.imageId) return;
+      const media = await transaction(['media'], 'readonly', tx => requestAsPromise(tx.objectStore('media').get(entry.imageId)));
+      if (media && media.blob) {
+        const filename = entry.imageId + '.webp';
+        entry.imagePath = 'assets/uploads/' + filename;
+        downloads.push({ filename, blob: media.blob });
+      } else if (!entry.imagePath) {
+        throw new Error('فایل تصویر «' + label + '» پیدا نشد.');
       }
+    };
+    for (const product of products) {
+      if (defaultImages[product.imageId]) product.imagePath = 'assets/' + defaultImages[product.imageId];
+      else await exportMedia(product, product.title);
     }
-    return { manifest: { format: 'dastin-public-catalogue', version: 1, exportedAt: new Date().toISOString(), settings, products }, downloads };
+    for (const card of showcase.cards) await exportMedia(card, card.title);
+    return { manifest: { format: 'dastin-public-catalogue', version: 1, exportedAt: new Date().toISOString(), settings, showcase, products }, downloads };
   }
   async function restoreBackup(backup) {
     if (!backup || backup.format !== 'dastin-catalogue' || !Array.isArray(backup.products)) throw new Error('فایل پشتیبان دستین معتبر نیست');
@@ -351,10 +421,11 @@
       });
       tx.objectStore('meta').put({ key: 'seeded', value: true, seededAt: Date.now() });
       tx.objectStore('meta').put({ key: 'settings', value: { ...defaultSettings, ...(backup.settings || {}) }, updatedAt: Date.now() });
+      tx.objectStore('meta').put({ key: 'showcase', value: normaliseShowcase(backup.showcase), updatedAt: Date.now() });
       tx.objectStore('meta').put({ key: 'localChanges', value: true, updatedAt: Date.now() });
     });
     imageURLs.forEach(url => URL.revokeObjectURL(url)); imageURLs.clear();
   }
 
-  window.DastinStore = { init, list, listForPublic, syncPublishedForAdmin, get, getImageURL, getSettings, getSettingsForPublic, saveSettings, add, update, remove, move, categoryLabel, categories, optimizeImage, createBackup, createGitExport, restoreBackup, cleanText };
+  window.DastinStore = { init, list, listForPublic, syncPublishedForAdmin, get, getImageURL, getSettings, getSettingsForPublic, saveSettings, getShowcase, getShowcaseForPublic, saveShowcase, add, update, remove, move, categoryLabel, categories, optimizeImage, createBackup, createGitExport, restoreBackup, cleanText };
 }());
