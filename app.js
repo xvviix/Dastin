@@ -18,6 +18,7 @@
   function finishIntro() {
     const intro = $('.intro');
     if (!intro || intro.classList.contains('is-leaving')) return;
+    main.removeAttribute('inert');
     main.setAttribute('aria-hidden', 'false');
     intro.classList.add('is-leaving');
     window.setTimeout(() => intro.remove(), 1050);
@@ -26,9 +27,21 @@
   function initIntro() {
     const intro = $('.intro');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduceMotion || !intro) { main.setAttribute('aria-hidden', 'false'); startReveals(); return; }
+    if (reduceMotion || !intro) { main.removeAttribute('inert'); main.setAttribute('aria-hidden', 'false'); startReveals(); return; }
     $('.intro__skip', intro).addEventListener('click', finishIntro);
     window.setTimeout(finishIntro, 2850);
+  }
+  function initBackgroundVideo() {
+    const video = $('.nature-video');
+    if (!video) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const saveData = Boolean(navigator.connection && navigator.connection.saveData);
+    if (reduceMotion || saveData) return;
+    if (!video.dataset.src) return;
+    video.src = video.dataset.src;
+    video.load();
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {});
   }
 
   function startReveals() {
@@ -89,7 +102,11 @@
     document.querySelectorAll('.filter').forEach(button => {
       button.addEventListener('click', () => {
         selectedFilter = button.dataset.filter;
-        document.querySelectorAll('.filter').forEach(item => item.classList.toggle('is-active', item === button));
+        document.querySelectorAll('.filter').forEach(item => {
+          const active = item === button;
+          item.classList.toggle('is-active', active);
+          item.setAttribute('aria-pressed', String(active));
+        });
         resetGallery();
       });
     });
@@ -103,7 +120,6 @@
     $('#modal-weight').textContent = product.weight;
     $('#modal-copyright').textContent = product.copyright;
     const modalImage = $('#modal-image');
-    modalImage.removeAttribute('src');
     modalImage.alt = product.title;
     dialog.dataset.productId = product.id;
     document.body.classList.add('modal-open');
@@ -129,9 +145,11 @@
       const open = button.getAttribute('aria-expanded') === 'true';
       button.setAttribute('aria-expanded', String(!open));
       button.setAttribute('aria-label', open ? 'باز کردن منو' : 'بستن منو');
-      menu.classList.toggle('is-open', !open); menu.setAttribute('aria-hidden', String(open));
+      menu.classList.toggle('is-open', !open);
+      menu.setAttribute('aria-hidden', String(open));
+      menu.toggleAttribute('inert', open);
     });
-    menu.querySelectorAll('a').forEach(link => link.addEventListener('click', () => { button.setAttribute('aria-expanded', 'false'); button.setAttribute('aria-label', 'باز کردن منو'); menu.classList.remove('is-open'); menu.setAttribute('aria-hidden', 'true'); }));
+    menu.querySelectorAll('a').forEach(link => link.addEventListener('click', () => { button.setAttribute('aria-expanded', 'false'); button.setAttribute('aria-label', 'باز کردن منو'); menu.classList.remove('is-open'); menu.setAttribute('aria-hidden', 'true'); menu.setAttribute('inert', ''); }));
   }
   async function applyShowcase(showcase) {
     $('#showcase-heading-first').textContent = showcase.headingFirst;
@@ -158,7 +176,11 @@
       const link = document.getElementById(id);
       if (!link) return;
       const safeHref = isEmail && href && !href.startsWith('mailto:') ? 'mailto:' + href : href;
-      if (safeHref) link.href = safeHref;
+      if (safeHref) {
+        link.href = safeHref;
+        link.removeAttribute('aria-disabled');
+        link.removeAttribute('tabindex');
+      }
       const label = link.querySelector('strong'); if (label) label.textContent = text || '';
     };
     assign('contact-instagram', settings.instagramText, settings.instagramUrl);
@@ -187,6 +209,7 @@
   }
 
   $('#year').textContent = new Intl.DateTimeFormat('fa-IR', { year: 'numeric' }).format(new Date());
+  initBackgroundVideo();
   initIntro();
   initFilters();
   initModal();

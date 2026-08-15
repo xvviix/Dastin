@@ -9,9 +9,7 @@
     <link rel="icon" href="../favicon.ico?v=3" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png?v=3" />
     <link rel="apple-touch-icon" href="../assets/favicon-192.png?v=3" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono&family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="preload" href="../assets/fonts/vazirmatn-arabic.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="admin.css" />
   </head>
   <body>
@@ -33,7 +31,7 @@
 
     <div id="admin-view" hidden>
       <header class="admin-header">
-        <a class="admin-brand" href="../" aria-label="بازگشت به سایت دستین"><img src="../assets/dastin-logo.png" width="52" height="52" alt="" /><span class="admin-brand__text">DASTIN<small>/ STUDIO</small></span></a>
+        <a class="admin-brand" href="../" aria-label="بازگشت به سایت دستین"><img src="../assets/dastin-logo-main.webp" width="52" height="52" alt="" /><span class="admin-brand__text">DASTIN<small>/ STUDIO</small></span></a>
         <div class="header-actions"><a href="../" target="_blank" rel="noopener">نمایش سایت <b>↙</b></a><button id="logout-button" class="quiet-button" type="button">خروج</button></div>
       </header>
       <main class="admin-shell">
@@ -42,7 +40,7 @@
           <p>تصویر، اطلاعات و ترتیب نمایش هر محصول را این‌جا مدیریت کنید. تصویرهای تازه، پیش از ذخیره برای بارگذاری سبک‌تر به WEBP تبدیل می‌شوند.</p>
         </section>
 
-        <section class="workspace">
+        <div class="workspace">
           <aside class="editor-panel" aria-labelledby="editor-title">
             <div class="panel-heading"><div><p class="mini-label">PRODUCT EDITOR</p><h2 id="editor-title">افزودن طعم جدید</h2></div><span id="edit-mode-badge" hidden>در حال ویرایش</span></div>
             <form id="product-form" novalidate>
@@ -50,14 +48,14 @@
               <label class="field-label" for="product-title">نام محصول <i>*</i></label>
               <input id="product-title" name="title" maxlength="80" placeholder="مثلاً برگر مخصوص دستین" required />
               <label class="field-label" for="product-category">دسته‌بندی <i>*</i></label>
-              <select id="product-category" name="category" required><option value="burger">برگر</option><option value="sausage">دودی و سوسیس</option><option value="cake">کیک و شیرینی</option><option value="fingerfood" selected>فینگر فود</option></select>
+              <select id="product-category" name="category"><option value="burger">برگر</option><option value="sausage">دودی و سوسیس</option><option value="cake">کیک و شیرینی</option><option value="fingerfood" selected>فینگر فود</option></select>
               <div class="two-fields"><div><label class="field-label" for="product-price">قیمت <i>*</i></label><input id="product-price" name="price" maxlength="70" placeholder="۳۴۰ هزار تومان" required /></div><div><label class="field-label" for="product-weight">وزن <i>*</i></label><input id="product-weight" name="weight" maxlength="70" placeholder="۲۵۰ گرم" required /></div></div>
               <label class="field-label" for="product-copyright">حق کپی‌رایت <i>*</i></label>
               <input id="product-copyright" name="copyright" maxlength="140" placeholder="© DASTIN / تصویر اختصاصی" required />
               <label class="field-label" for="product-description">توضیحات جذاب <i>*</i></label>
               <textarea id="product-description" name="description" maxlength="800" rows="4" placeholder="داستان کوتاه و خوشمزه‌ی این محصول..." required></textarea>
               <label class="field-label" for="product-image">تصویر محصول <i id="image-required">*</i></label>
-              <label class="upload-zone" for="product-image"><input id="product-image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /><span id="upload-icon">+</span><strong id="upload-title">انتخاب تصویر</strong><small id="upload-help">JPG، PNG، WEBP یا AVIF · حداکثر ۱۲ مگابایت</small><img id="image-preview" alt="پیش‌نمایش تصویر انتخابی" hidden /></label>
+              <label class="upload-zone" for="product-image"><input id="product-image" name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /><span id="upload-icon">+</span><strong id="upload-title">انتخاب تصویر</strong><small id="upload-help">JPG، PNG، WEBP یا AVIF · حداکثر ۱۲ مگابایت</small><img id="image-preview" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="پیش‌نمایش تصویر انتخابی" hidden /></label>
               <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
               <div class="form-actions"><button id="save-product" class="button button--primary" type="submit">ثبت محصول <b>←</b></button><button id="cancel-edit" class="button button--quiet" type="button" hidden>انصراف</button></div>
             </form>
@@ -69,7 +67,7 @@
             <button id="load-more" class="load-more" type="button" hidden>نمایش موارد بیشتر <b>↓</b></button>
             <div id="admin-empty" class="admin-empty" hidden><strong>کاتالوگ خالی است.</strong><span>اولین تصویر و طعم را از فرم کنار صفحه اضافه کنید.</span></div>
           </section>
-        </section>
+        </div>
 
         <section class="contact-settings-panel" aria-labelledby="settings-title">
           <div class="settings-heading"><p class="mini-label">CONTACT SETTINGS</p><h2 id="settings-title">راه‌های ارتباطی</h2><p>متن و لینک هر کانال در سکشن سوم سایت نمایش داده می‌شود. می‌توانید هر زمان آن‌ها را تغییر دهید.</p></div>
@@ -87,9 +85,9 @@
           <div class="settings-heading"><p class="mini-label">SHOWCASE CONTROL</p><h2 id="showcase-settings-title">نمونه‌های صفحهٔ اول</h2><p>تیتر، توضیحات، سه کارت تصویری و متن‌های پایین آن‌ها را برای سکشن معرفی سایت تغییر دهید</p></div>
           <form id="showcase-settings-form" class="showcase-settings-form">
             <div class="showcase-copy-fields"><label>خط اول تیتر<input id="showcase-heading-first-input" maxlength="90" /></label><label>بخش رنگی تیتر<input id="showcase-heading-accent-input" maxlength="90" /></label><label class="showcase-description-field">توضیحات<textarea id="showcase-description-input" maxlength="400" rows="3"></textarea></label></div>
-            <div class="showcase-card-fields" data-editor-card="cake"><h3>کارت کیک</h3><label>زیرعنوان<input data-showcase-field="label" maxlength="80" /></label><label>عنوان<input data-showcase-field="title" maxlength="100" /></label><label>تصویر تازه <input data-showcase-field="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /></label><img class="showcase-editor-preview" alt="پیش‌نمایش کارت کیک" /></div>
-            <div class="showcase-card-fields" data-editor-card="burger"><h3>کارت برگر</h3><label>زیرعنوان<input data-showcase-field="label" maxlength="80" /></label><label>عنوان<input data-showcase-field="title" maxlength="100" /></label><label>تصویر تازه <input data-showcase-field="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /></label><img class="showcase-editor-preview" alt="پیش‌نمایش کارت برگر" /></div>
-            <div class="showcase-card-fields" data-editor-card="coldcuts"><h3>کارت سوسیس و کالباس</h3><label>زیرعنوان<input data-showcase-field="label" maxlength="80" /></label><label>عنوان<input data-showcase-field="title" maxlength="100" /></label><label>تصویر تازه <input data-showcase-field="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /></label><img class="showcase-editor-preview" alt="پیش‌نمایش کارت سوسیس و کالباس" /></div>
+            <div class="showcase-card-fields" data-editor-card="cake"><h3>کارت کیک</h3><label>زیرعنوان<input data-showcase-field="label" maxlength="80" /></label><label>عنوان<input data-showcase-field="title" maxlength="100" /></label><label>تصویر تازه <input data-showcase-field="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /></label><img class="showcase-editor-preview" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="پیش‌نمایش کارت کیک" /></div>
+            <div class="showcase-card-fields" data-editor-card="burger"><h3>کارت برگر</h3><label>زیرعنوان<input data-showcase-field="label" maxlength="80" /></label><label>عنوان<input data-showcase-field="title" maxlength="100" /></label><label>تصویر تازه <input data-showcase-field="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /></label><img class="showcase-editor-preview" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="پیش‌نمایش کارت برگر" /></div>
+            <div class="showcase-card-fields" data-editor-card="coldcuts"><h3>کارت سوسیس و کالباس</h3><label>زیرعنوان<input data-showcase-field="label" maxlength="80" /></label><label>عنوان<input data-showcase-field="title" maxlength="100" /></label><label>تصویر تازه <input data-showcase-field="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" /></label><img class="showcase-editor-preview" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="پیش‌نمایش کارت سوسیس و کالباس" /></div>
             <div class="showcase-notes-fields"><label>متن پایین ۱<input data-showcase-note="0" maxlength="180" /></label><label>متن پایین ۲<input data-showcase-note="1" maxlength="180" /></label><label>متن پایین ۳<input data-showcase-note="2" maxlength="180" /></label></div>
             <div class="showcase-save"><button class="button button--primary" type="submit">ذخیره سکشن معرفی <b>←</b></button><p id="showcase-status" class="settings-status" role="status"></p></div>
           </form>

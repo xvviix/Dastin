@@ -1,10 +1,12 @@
 {
-  "name": "DASTIN",
+  "id": "./",
+  "name": "DASTIN (دستین)",
   "short_name": "DASTIN",
-  "description": "طعم دست‌ساز برای لحظه‌های واقعی",
-  "lang": "fa",
+  "description": "سایت رسمی DASTIN (دستین)؛ طعم‌ها و محصولات دست‌ساز برای لحظه‌های واقعی",
+  "lang": "fa-IR",
   "dir": "rtl",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#17261c",
   "theme_color": "#17261c",
@@ -12,12 +14,14 @@
     {
       "src": "assets/favicon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "assets/favicon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

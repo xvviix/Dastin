@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://xvviix.github.io/Dastin/sitemap.xml

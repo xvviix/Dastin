@@ -29,8 +29,8 @@
   };
   const defaultSettings = {
     instagramText: '@dastin.food', instagramUrl: 'https://instagram.com/dastin.food',
-    whatsappText: 'واتساپ دستین', whatsappUrl: 'https://wa.me/989000000000',
-    baleText: 'پیام‌رسان بله', baleUrl: 'https://ble.ir/',
+    whatsappText: 'به‌زودی', whatsappUrl: '',
+    baleText: 'به‌زودی', baleUrl: '',
     telegramText: '@dastin_food', telegramUrl: 'https://t.me/dastin_food',
     emailText: 'hello@dastin.food', emailUrl: 'hello@dastin.food'
   };
