@@ -31,13 +31,165 @@
     <meta name="twitter:image" content="https://xvviix.github.io/Dastin/assets/dastin-all-products.jpg" />
     <meta name="twitter:image:alt" content="مجموعه محصولات دست‌ساز DASTIN (دستین)" />
 
-    <link rel="icon" href="favicon.ico?v=3" sizes="any" />
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=3" />
-    <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png?v=3" />
-    <link rel="apple-touch-icon" sizes="192x192" href="assets/favicon-192.png?v=3" />
-    <link rel="manifest" href="site.webmanifest?v=4" />
+    <link rel="icon" href="favicon.ico?v=4" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=4" />
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png?v=4" />
+    <link rel="apple-touch-icon" sizes="192x192" href="assets/favicon-192.png?v=4" />
+    <link rel="manifest" href="site.webmanifest?v=5" />
     <link rel="preload" href="assets/fonts/vazirmatn-arabic.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="styles.css" />
+
+    <!-- Enhanced Background Styles -->
+    <style>
+      /* Premium Animated Background - Replaces video */
+      .living-nature {
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        overflow: hidden;
+        background: 
+          radial-gradient(ellipse at 20% 80%, rgba(34, 68, 48, 0.4) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 20%, rgba(23, 38, 28, 0.6) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 50%, rgba(30, 50, 38, 0.3) 0%, transparent 70%),
+          linear-gradient(180deg, #0d1810 0%, #17261c 40%, #1a2f22 100%);
+      }
+
+      /* Animated gradient overlay */
+      .living-nature::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: 
+          radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(76, 132, 96, 0.15) 0%, transparent 50%);
+        opacity: 0.6;
+        transition: background 0.3s ease;
+      }
+
+      /* Floating particles */
+      .living-nature::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: 
+          radial-gradient(2px 2px at 100px 50px, rgba(255,255,255,0.08), transparent),
+          radial-gradient(2px 2px at 200px 150px, rgba(255,255,255,0.05), transparent),
+          radial-gradient(3px 3px at 300px 250px, rgba(180,220,190,0.08), transparent),
+          radial-gradient(2px 2px at 400px 100px, rgba(255,255,255,0.06), transparent),
+          radial-gradient(3px 3px at 500px 300px, rgba(180,220,190,0.06), transparent),
+          radial-gradient(2px 2px at 600px 200px, rgba(255,255,255,0.07), transparent),
+          radial-gradient(2px 2px at 700px 350px, rgba(180,220,190,0.05), transparent),
+          radial-gradient(3px 3px at 800px 80px, rgba(255,255,255,0.08), transparent),
+          radial-gradient(2px 2px at 900px 280px, rgba(180,220,190,0.07), transparent),
+          radial-gradient(2px 2px at 1000px 180px, rgba(255,255,255,0.06), transparent);
+        animation: floatParticles 25s ease-in-out infinite alternate;
+      }
+
+      @keyframes floatParticles {
+        0% { transform: translateY(0) translateX(0); }
+        100% { transform: translateY(-30px) translateX(20px); }
+      }
+
+      /* Mist layers - animated */
+      .nature-mist {
+        position: absolute;
+        width: 200%;
+        height: 100%;
+        left: -50%;
+        top: 0;
+        background: 
+          linear-gradient(90deg, 
+            transparent 0%, 
+            rgba(180, 210, 190, 0.03) 20%, 
+            rgba(180, 210, 190, 0.06) 50%, 
+            rgba(180, 210, 190, 0.03) 80%, 
+            transparent 100%
+          );
+        animation: mistMove 20s ease-in-out infinite;
+      }
+
+      .nature-mist--two {
+        animation-delay: -10s;
+        opacity: 0.7;
+        top: 20%;
+      }
+
+      @keyframes mistMove {
+        0%, 100% { transform: translateX(-10%); }
+        50% { transform: translateX(10%); }
+      }
+
+      /* Ambient glow orbs */
+      .living-nature > i {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
+        opacity: 0.15;
+        animation: orbFloat 15s ease-in-out infinite;
+      }
+
+      .living-nature > i:nth-child(3) {
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(76, 132, 96, 0.4), transparent 70%);
+        top: 10%;
+        right: 10%;
+        animation-delay: 0s;
+      }
+
+      .living-nature > i:nth-child(4) {
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(120, 170, 130, 0.3), transparent 70%);
+        bottom: 20%;
+        left: 5%;
+        animation-delay: -5s;
+      }
+
+      .living-nature > i:nth-child(5) {
+        width: 350px;
+        height: 350px;
+        background: radial-gradient(circle, rgba(60, 110, 80, 0.35), transparent 70%);
+        top: 50%;
+        left: 40%;
+        animation-delay: -10s;
+      }
+
+      @keyframes orbFloat {
+        0%, 100% { 
+          transform: translate(0, 0) scale(1); 
+          opacity: 0.15; 
+        }
+        33% { 
+          transform: translate(30px, -20px) scale(1.1); 
+          opacity: 0.2; 
+        }
+        66% { 
+          transform: translate(-20px, 20px) scale(0.95); 
+          opacity: 0.12; 
+        }
+      }
+
+      /* Noise texture overlay */
+      .noise {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0.03;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-size: 256px 256px;
+      }
+
+      /* Reduced motion support */
+      @media (prefers-reduced-motion: reduce) {
+        .living-nature::after,
+        .nature-mist,
+        .living-nature > i {
+          animation: none;
+        }
+      }
+    </style>
 
     <script type="application/ld+json">
       {
@@ -79,7 +231,12 @@
     <script>document.documentElement.classList.add('js');</script>
   </head>
   <body>
-    <div class="living-nature" aria-hidden="true"><video class="nature-video" data-src="assets/nature-live.mp4" muted loop playsinline preload="none" poster="assets/nature-live-background.jpg"></video><span class="nature-mist nature-mist--one"></span><span class="nature-mist nature-mist--two"></span><i></i><i></i><i></i><i></i></div>
+    <!-- Premium Animated Background (No Video) -->
+    <div class="living-nature" aria-hidden="true">
+      <span class="nature-mist nature-mist--one"></span>
+      <span class="nature-mist nature-mist--two"></span>
+      <i></i><i></i><i></i>
+    </div>
     <div class="noise" aria-hidden="true"></div>
 
     <section class="intro" aria-label="معرفی برند DASTIN">
