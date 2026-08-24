@@ -1,7 +1,14 @@
+# Robots.txt for DASTIN (دستین)
+# https://xvviix.github.io/Dastin/
+
 User-agent: *
 Allow: /
 
-# Block decorative background video from crawling (prevents video indexing errors)
-Disallow: /assets/nature-live.mp4
-
+# Sitemap location
 Sitemap: https://xvviix.github.io/Dastin/sitemap.xml
+
+# Crawl-delay (be nice to bots)
+Crawl-delay: 1
+
+# Block admin panel from indexing
+Disallow: /studio-dastin/
