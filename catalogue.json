@@ -1,20 +1,23 @@
 {
   "format": "dastin-public-catalogue",
   "version": 1,
-  "exportedAt": "2026-09-29T12:57:40.131Z",
+  "exportedAt": "2026-09-29T13:19:03.227Z",
   "settings": {
-    "baleUrl": "",
-    "baleText": "به‌زودی",
-    "emailUrl": "hello@dastin.food",
-    "emailText": "hello@dastin.food",
-    "telegramUrl": "https://t.me/dastin_food",
-    "whatsappUrl": "",
+    "instagramText": "@dastin.food",
     "instagramUrl": "https://instagram.com/dastin.food",
-    "telegramText": "@dastin_food",
     "whatsappText": "به‌زودی",
-    "instagramText": "@dastin.food"
+    "whatsappUrl": "",
+    "baleText": "به‌زودی",
+    "baleUrl": "",
+    "telegramText": "@dastin_food",
+    "telegramUrl": "https://t.me/dastin_food",
+    "emailText": "hello@dastin.food",
+    "emailUrl": "hello@dastin.food"
   },
   "showcase": {
+    "headingFirst": "یک مزه،",
+    "headingAccent": "حالِ خوب",
+    "description": "از مهمانی‌های شلوغ تا یک عصرانه‌ی دو نفره، برای هر حال‌وهوایی چیزی خوش‌طعم داریم",
     "cards": [
       {
         "id": "cake",
@@ -42,10 +45,7 @@
       "کیک و شیرینی های رژیمی و فوق‌العاده",
       "برگر های لذیذ",
       "سوسیس و کالباس خانگی"
-    ],
-    "description": "از مهمانی‌های شلوغ تا یک عصرانه‌ی دو نفره، برای هر حال‌وهوایی چیزی خوش‌طعم داریم",
-    "headingFirst": "یک مزه،",
-    "headingAccent": "حالِ خوب"
+    ]
   },
   "products": [
     {
@@ -99,6 +99,19 @@
       "imagePath": "assets/product-finger-food.jpg",
       "order": 40,
       "createdAt": 1704326400000
+    },
+    {
+      "id": "p-mumpd5yn-bq655",
+      "imageId": "m-p-mumpd5yn-bq655",
+      "title": "تست انتشار مستقیم",
+      "category": "cake",
+      "price": "۲۰۰ تومان",
+      "weight": "۵۰۰ گرم",
+      "copyright": "© DASTIN / تست",
+      "description": "تست انتشار مستقیم از پنل به گیت‌هاب بدون واسطه.",
+      "order": 50,
+      "createdAt": 1790687940719,
+      "imagePath": "assets/uploads/m-p-mumpd5yn-bq655.webp"
     }
   ]
 }
