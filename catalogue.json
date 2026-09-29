@@ -1,7 +1,7 @@
 {
   "format": "dastin-public-catalogue",
   "version": 1,
-  "exportedAt": "2026-09-29T13:34:28.165Z",
+  "exportedAt": "2026-09-29T13:38:31.234Z",
   "settings": {
     "instagramText": "@dastin.food",
     "instagramUrl": "https://instagram.com/dastin.food",
@@ -50,17 +50,17 @@
   "products": [
     {
       "id": "burger-smoky-mix",
-      "title": ".",
+      "title": ".....",
       "category": "burger",
-      "price": ".",
-      "weight": ".",
+      "price": "......",
+      "weight": ".....",
       "copyright": "© DASTIN / تصویر اختصاصی",
-      "description": ".",
-      "imageId": "default-burger",
-      "imagePath": "assets/product-burger.jpg",
+      "description": "............................................................................",
+      "imageId": "m-burger-smoky-mix",
+      "imagePath": "assets/uploads/m-burger-smoky-mix.webp",
       "order": 10,
       "createdAt": 1704067200000,
-      "updatedAt": 1790688865654
+      "updatedAt": 1790689108712
     },
     {
       "id": "sausage-oak-smoked",
