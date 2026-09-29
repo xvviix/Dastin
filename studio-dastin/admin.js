@@ -1,8 +1,8 @@
 (function () {
   'use strict';
 
-  const ACCESS_KEY = 'dastin-studio-authorized';
-  // This only gates the UI. Use Cloudflare Access for real protection on a public deployment.
+  const ACCESS_KEY = 'dastin-studio-access';
+  // Offline preview fallback only — the real gate is Supabase Auth.
   const PASSWORD_HASH = 'd76f201a488bec5c1373e096ab78d6cba55a5d012cdc4cdf4ed1b4c51886f89a';
   const PAGE_SIZE = 30;
   const $ = (selector, parent = document) => parent.querySelector(selector);
@@ -34,10 +34,22 @@
   async function showStudio() {
     loginView.hidden = true;
     adminView.hidden = false;
+    setCloudStatus();
     try { await DastinStore.syncPublishedForAdmin(); } catch (_) { /* Offline preview falls back to local data. */ }
     refreshProducts();
     loadContactSettings();
     loadShowcaseSettings();
+  }
+  function setCloudStatus() {
+    const chip = $('#cloud-status');
+    if (!chip) return;
+    if (DastinStore.auth.available) {
+      chip.textContent = '● متصل به دیتابیس ابری · انتشار زنده';
+      chip.classList.add('is-online');
+    } else {
+      chip.textContent = '● حالت آفلاین · ذخیره فقط در همین مرورگر';
+      chip.classList.add('is-offline');
+    }
   }
   async function digest(value) {
     if (!(window.crypto && crypto.subtle)) throw new Error('این مرورگر از ورود امن پشتیبانی نمی‌کند.');
@@ -46,12 +58,38 @@
     return Array.from(new Uint8Array(hash)).map(byte => byte.toString(16).padStart(2, '0')).join('');
   }
   function initLogin() {
-    if (sessionStorage.getItem(ACCESS_KEY) === '1') { showStudio(); return; }
     $('#toggle-password').addEventListener('click', () => {
       const input = $('#admin-password'); const show = input.type === 'password';
       input.type = show ? 'text' : 'password';
       $('#toggle-password').setAttribute('aria-label', show ? 'پنهان کردن رمز' : 'نمایش رمز');
     });
+    if (DastinStore.auth.available) {
+      DastinStore.auth.isAuthenticated().then(known => {
+        if (known || sessionStorage.getItem(ACCESS_KEY) === '1') { showStudio(); return; }
+        loginView.hidden = false;
+      }).catch(() => { loginView.hidden = false; });
+      $('#login-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const error = $('#login-error'); error.hidden = true;
+        const button = event.target.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+          const { error: signInError } = await DastinStore.auth.signIn($('#admin-email').value, $('#admin-password').value);
+          if (signInError) {
+            error.textContent = 'ورود انجام نشد: ایمیل یا رمز درست نیست.';
+            error.hidden = false; button.disabled = false; return;
+          }
+          sessionStorage.setItem(ACCESS_KEY, '1');
+          showStudio();
+        } catch (connectError) {
+          error.textContent = connectError.message || 'اتصال به دیتابیس ابری برقرار نشد.';
+          error.hidden = false; button.disabled = false;
+        }
+      });
+      return;
+    }
+    if (sessionStorage.getItem(ACCESS_KEY) === '1') { showStudio(); return; }
+    loginView.hidden = false;
     $('#login-form').addEventListener('submit', async event => {
       event.preventDefault();
       const error = $('#login-error'); error.hidden = true;
@@ -60,6 +98,27 @@
         if (submitted !== PASSWORD_HASH) { error.hidden = false; return; }
         sessionStorage.setItem(ACCESS_KEY, '1'); showStudio();
       } catch (_) { error.textContent = 'ورود در این مرورگر ممکن نیست.'; error.hidden = false; }
+    });
+  }
+  function initPasswordForm() {
+    const passwordForm = $('#password-form');
+    if (!passwordForm) return;
+    passwordForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const status = $('#password-status');
+      const value = $('#new-password').value;
+      status.hidden = false;
+      if (!DastinStore.auth.available) { status.textContent = 'در حالت آفلاین تغییر رمز ممکن نیست.'; status.classList.add('is-error'); return; }
+      if (value.length < 8) { status.textContent = 'رمز جدید باید حداقل ۸ نویسه باشد.'; status.classList.add('is-error'); return; }
+      try {
+        await DastinStore.auth.changePassword(value);
+        $('#new-password').value = '';
+        status.textContent = 'رمز مدیر با موفقیت عوض شد.';
+        status.classList.remove('is-error');
+      } catch (error) {
+        status.textContent = error.message || 'تغییر رمز انجام نشد.';
+        status.classList.add('is-error');
+      }
     });
   }
 
@@ -302,7 +361,7 @@
     });
   }
 
-  $('#logout-button').addEventListener('click', () => { sessionStorage.removeItem(ACCESS_KEY); location.reload(); });
+  $('#logout-button').addEventListener('click', async () => { await DastinStore.auth.signOut(); sessionStorage.removeItem(ACCESS_KEY); location.reload(); });
   loadMoreButton.addEventListener('click', () => { renderedCount += PAGE_SIZE; renderList(); });
-  initLogin(); initForm(); initContactSettings(); initShowcaseSettings(); initBackup();
+  initLogin(); initPasswordForm(); initForm(); initContactSettings(); initShowcaseSettings(); initBackup();
 }());
