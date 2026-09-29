@@ -44,7 +44,7 @@
     const chip = $('#cloud-status');
     if (!chip) return;
     if (DastinStore.auth.available) {
-      chip.textContent = '● متصل به دیتابیس ابری · انتشار زنده';
+      chip.textContent = '● متصل به دیتابیس ابری · انتشار خودکار هر ~۱۵ دقیقه';
       chip.classList.add('is-online');
     } else {
       chip.textContent = '● حالت آفلاین · ذخیره فقط در همین مرورگر';

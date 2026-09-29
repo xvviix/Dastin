@@ -280,6 +280,13 @@
     return localList();
   }
   async function get(id) {
+    /* Look in the published snapshot first so the product modal opens instantly,
+       even for visitors who cannot reach the cloud (e.g. sanctions/filtered networks). */
+    const published = await fetchPublishedCatalogue();
+    if (published && Array.isArray(published.products)) {
+      const hit = published.products.find(product => product.id === id);
+      if (hit) return hit;
+    }
     const rows = await list();
     return rows.find(product => product.id === id) || (await localGet(id)) || null;
   }
@@ -345,14 +352,30 @@
     return next;
   }
 
+  /* Public visitors read the GitHub-hosted snapshot (catalogue.json + repo images) first:
+     it is fast and reachable everywhere, including Iran where cloud endpoints can be
+     filtered. The cloud is only a fallback here; the studio panel writes to the cloud
+     and a scheduled GitHub Action refreshes this snapshot every 15 minutes. */
   async function listForPublic() {
+    const published = await fetchPublishedCatalogue();
+    if (published && Array.isArray(published.products) && published.products.length) {
+      const rows = published.products.slice().sort((a, b) => a.order - b.order || a.createdAt - b.createdAt);
+      mirrorProducts(rows);
+      return rows;
+    }
     return list();
   }
   async function getSettingsForPublic() {
-    return getSettings();
+    const published = await fetchPublishedCatalogue();
+    if (published && published.settings) return { ...defaultSettings, ...published.settings };
+    if (REMOTE_ENABLED) { try { return await remoteTimeout(remoteGetSettings()); } catch (_) { /* local mirror */ } }
+    return localGetSettings();
   }
   async function getShowcaseForPublic() {
-    return getShowcase();
+    const published = await fetchPublishedCatalogue();
+    if (published && published.showcase) return normaliseShowcase(published.showcase);
+    if (REMOTE_ENABLED) { try { return await remoteTimeout(remoteGetShowcase()); } catch (_) { /* local mirror */ } }
+    return localGetShowcase();
   }
   async function syncPublishedForAdmin() {
     return list();
