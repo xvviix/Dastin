@@ -1,7 +1,7 @@
 {
   "format": "dastin-public-catalogue",
   "version": 1,
-  "exportedAt": "2026-09-29T13:19:03.227Z",
+  "exportedAt": "2026-09-29T13:20:51.154Z",
   "settings": {
     "instagramText": "@dastin.food",
     "instagramUrl": "https://instagram.com/dastin.food",
@@ -99,19 +99,6 @@
       "imagePath": "assets/product-finger-food.jpg",
       "order": 40,
       "createdAt": 1704326400000
-    },
-    {
-      "id": "p-mumpd5yn-bq655",
-      "imageId": "m-p-mumpd5yn-bq655",
-      "title": "تست انتشار مستقیم",
-      "category": "cake",
-      "price": "۲۰۰ تومان",
-      "weight": "۵۰۰ گرم",
-      "copyright": "© DASTIN / تست",
-      "description": "تست انتشار مستقیم از پنل به گیت‌هاب بدون واسطه.",
-      "order": 50,
-      "createdAt": 1790687940719,
-      "imagePath": "assets/uploads/m-p-mumpd5yn-bq655.webp"
     }
   ]
 }
