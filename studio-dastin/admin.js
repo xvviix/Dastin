@@ -2,7 +2,7 @@
   'use strict';
 
   const ACCESS_KEY = 'dastin-studio-access';
-  // Offline preview fallback only — the real gate is Supabase Auth.
+  // Offline preview fallback only — publishing requires a GitHub token.
   const PASSWORD_HASH = 'd76f201a488bec5c1373e096ab78d6cba55a5d012cdc4cdf4ed1b4c51886f89a';
   const PAGE_SIZE = 30;
   const $ = (selector, parent = document) => parent.querySelector(selector);
@@ -34,22 +34,57 @@
   async function showStudio() {
     loginView.hidden = true;
     adminView.hidden = false;
-    setCloudStatus();
+    setConnectionStatus();
     try { await DastinStore.syncPublishedForAdmin(); } catch (_) { /* Offline preview falls back to local data. */ }
     refreshProducts();
     loadContactSettings();
     loadShowcaseSettings();
+    DastinStore.hasLocalChanges().then(function (pending) { if (pending) DastinPublisher.publishSoon(); });
   }
-  function setCloudStatus() {
+  function setConnectionStatus(state) {
     const chip = $('#cloud-status');
     if (!chip) return;
-    if (DastinStore.auth.available) {
-      chip.textContent = '● متصل به دیتابیس ابری · انتشار خودکار هر ~۱۵ دقیقه';
+    chip.classList.remove('is-online', 'is-offline');
+    if (state === 'publishing') { chip.textContent = '↑ در حال انتشار در گیت‌هاب…'; chip.classList.add('is-offline'); return; }
+    if (state === 'published') { chip.textContent = '✓ منتشر شد · سایت تا ~۲ دقیقه دیگر به‌روز می‌شود'; chip.classList.add('is-online'); return; }
+    if (state === 'error') { chip.textContent = '✕ انتشار انجام نشد — دوباره تلاش کنید'; chip.classList.add('is-offline'); return; }
+    if (DastinPublisher.hasToken()) {
+      chip.textContent = '● متصل به گیت‌هاب · انتشار خودکار با هر ذخیره';
       chip.classList.add('is-online');
     } else {
-      chip.textContent = '● حالت آفلاین · ذخیره فقط در همین مرورگر';
+      chip.textContent = '● حالت آفلاین · تغییرات منتشر نمی‌شوند';
       chip.classList.add('is-offline');
     }
+  }
+  /* Auto-publish hook: fired by dastin-publish.js when a publish finishes. */
+  window.onDastinPublished = function (error) {
+    if (!error) {
+      setConnectionStatus('published');
+      setTimeout(function () { setConnectionStatus(); }, 8000);
+    } else {
+      setConnectionStatus('error');
+      const status = $('#publish-status');
+      if (status) { status.hidden = false; status.textContent = 'انتشار ناموفق: ' + error.message; status.classList.add('is-error'); }
+    }
+  };
+  function publishNow() {
+    const status = $('#publish-status');
+    if (!DastinPublisher.hasToken()) {
+      if (status) { status.hidden = false; status.textContent = 'اول با توکن گیت‌هاب وارد شوید.'; status.classList.add('is-error'); }
+      return;
+    }
+    if (status) { status.hidden = false; status.textContent = 'در حال ساخت کامیت و انتشار…'; status.classList.remove('is-error'); }
+    setConnectionStatus('publishing');
+    DastinPublisher.publish().then(function (result) {
+      if (result) window.onDastinPublished(null);
+      if (status && result) { status.textContent = 'کامیت ' + result.sha.slice(0, 7) + ' ساخته شد؛ Pages تا ~۲ دقیقه دیگر سایت را به‌روز می‌کند.'; status.classList.remove('is-error'); }
+    }).catch(function (error) {
+      window.onDastinPublished(error);
+    });
+  }
+  function initPublish() {
+    const button = $('#publish-now');
+    if (button) button.addEventListener('click', publishNow);
   }
   async function digest(value) {
     if (!(window.crypto && crypto.subtle)) throw new Error('این مرورگر از ورود امن پشتیبانی نمی‌کند.');
@@ -59,67 +94,63 @@
   }
   function initLogin() {
     $('#toggle-password').addEventListener('click', () => {
+      const input = $('#admin-token'); const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      $('#toggle-password').setAttribute('aria-label', show ? 'پنهان کردن توکن' : 'نمایش توکن');
+    });
+    $('#toggle-password-off').addEventListener('click', () => {
       const input = $('#admin-password'); const show = input.type === 'password';
       input.type = show ? 'text' : 'password';
-      $('#toggle-password').setAttribute('aria-label', show ? 'پنهان کردن رمز' : 'نمایش رمز');
+      $('#toggle-password-off').setAttribute('aria-label', show ? 'پنهان کردن رمز' : 'نمایش رمز');
     });
-    if (DastinStore.auth.available) {
-      DastinStore.auth.isAuthenticated().then(known => {
-        if (known || sessionStorage.getItem(ACCESS_KEY) === '1') { showStudio(); return; }
-        loginView.hidden = false;
-      }).catch(() => { loginView.hidden = false; });
-      $('#login-form').addEventListener('submit', async event => {
-        event.preventDefault();
-        const error = $('#login-error'); error.hidden = true;
-        const button = event.target.querySelector('button[type="submit"]');
-        button.disabled = true;
-        try {
-          const { error: signInError } = await DastinStore.auth.signIn($('#admin-email').value, $('#admin-password').value);
-          if (signInError) {
-            error.textContent = 'ورود انجام نشد: ایمیل یا رمز درست نیست.';
-            error.hidden = false; button.disabled = false; return;
-          }
-          sessionStorage.setItem(ACCESS_KEY, '1');
-          showStudio();
-        } catch (connectError) {
-          error.textContent = connectError.message || 'اتصال به دیتابیس ابری برقرار نشد.';
-          error.hidden = false; button.disabled = false;
-        }
-      });
-      return;
-    }
-    if (sessionStorage.getItem(ACCESS_KEY) === '1') { showStudio(); return; }
-    loginView.hidden = false;
+    $('#offline-toggle').addEventListener('click', () => {
+      $('#token-form-wrap').hidden = true;
+      $('#offline-form-wrap').hidden = false;
+    });
+    $('#back-to-token').addEventListener('click', () => {
+      $('#offline-form-wrap').hidden = true;
+      $('#token-form-wrap').hidden = false;
+    });
     $('#login-form').addEventListener('submit', async event => {
       event.preventDefault();
       const error = $('#login-error'); error.hidden = true;
+      const button = event.target.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        DastinPublisher.setToken($('#admin-token').value.trim(), $('#remember-token').checked);
+        await DastinPublisher.validate();
+        sessionStorage.setItem(ACCESS_KEY, '1');
+        showStudio();
+      } catch (loginError) {
+        DastinPublisher.clearToken();
+        error.textContent = loginError.message || 'ورود انجام نشد.';
+        error.hidden = false; button.disabled = false;
+      }
+    });
+    $('#offline-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const error = $('#offline-error'); error.hidden = true;
       try {
         const submitted = await digest($('#admin-password').value);
         if (submitted !== PASSWORD_HASH) { error.hidden = false; return; }
         sessionStorage.setItem(ACCESS_KEY, '1'); showStudio();
       } catch (_) { error.textContent = 'ورود در این مرورگر ممکن نیست.'; error.hidden = false; }
     });
-  }
-  function initPasswordForm() {
-    const passwordForm = $('#password-form');
-    if (!passwordForm) return;
-    passwordForm.addEventListener('submit', async event => {
-      event.preventDefault();
-      const status = $('#password-status');
-      const value = $('#new-password').value;
-      status.hidden = false;
-      if (!DastinStore.auth.available) { status.textContent = 'در حالت آفلاین تغییر رمز ممکن نیست.'; status.classList.add('is-error'); return; }
-      if (value.length < 8) { status.textContent = 'رمز جدید باید حداقل ۸ نویسه باشد.'; status.classList.add('is-error'); return; }
-      try {
-        await DastinStore.auth.changePassword(value);
-        $('#new-password').value = '';
-        status.textContent = 'رمز مدیر با موفقیت عوض شد.';
-        status.classList.remove('is-error');
-      } catch (error) {
-        status.textContent = error.message || 'تغییر رمز انجام نشد.';
-        status.classList.add('is-error');
-      }
-    });
+    if (DastinPublisher.hasToken()) {
+      loginView.hidden = true;
+      DastinPublisher.validate().then(() => {
+        sessionStorage.setItem(ACCESS_KEY, '1');
+        showStudio();
+      }).catch(() => {
+        loginView.hidden = false;
+        const error = $('#login-error');
+        error.textContent = 'توکن ذخیره‌شده معتبر نیست یا منقضی شده؛ توکن تازه وارد کنید.';
+        error.hidden = false;
+      });
+      return;
+    }
+    if (sessionStorage.getItem(ACCESS_KEY) === '1') { showStudio(); return; }
+    loginView.hidden = false;
   }
 
   function productRow(product, index) {
@@ -164,7 +195,7 @@
     renderList();
   }
   async function moveProduct(id, direction) {
-    try { await DastinStore.move(id, direction); await refreshProducts(true); } catch (error) { alert(error.message || 'تغییر ترتیب انجام نشد.'); }
+    try { await DastinStore.move(id, direction); await refreshProducts(true); DastinPublisher.publishSoon(); } catch (error) { alert(error.message || 'تغییر ترتیب انجام نشد.'); }
   }
   async function deleteProduct(product) {
     if (!confirm('«' + product.title + '» و تصویر آن حذف شود؟ این کار قابل بازگشت نیست.')) return;
@@ -172,6 +203,7 @@
       await DastinStore.remove(product.id);
       if ($('#product-id').value === product.id) resetForm();
       await refreshProducts(true);
+      DastinPublisher.publishSoon();
     } catch (error) { alert(error.message || 'حذف انجام نشد.'); }
   }
 
@@ -229,7 +261,8 @@
       const saveButton = $('#save-product'); saveButton.disabled = true; setStatus('در حال ذخیره...');
       try {
         if (editingId) await DastinStore.update(editingId, payload); else await DastinStore.add(payload);
-        resetForm(); await refreshProducts(); setStatus('با موفقیت ذخیره شد.');
+        resetForm(); await refreshProducts(); setStatus('با موفقیت ذخیره شد؛ در حال انتشار…');
+        DastinPublisher.publishSoon();
       } catch (error) { setStatus(error.message || 'ذخیره انجام نشد.', true); }
       finally { saveButton.disabled = false; }
     });
@@ -263,7 +296,7 @@
         emailText: $('#setting-email-text').value, emailUrl: $('#setting-email-url').value
       };
       button.disabled = true; status.classList.remove('is-error'); status.textContent = 'در حال ذخیره...';
-      try { await DastinStore.saveSettings(payload); status.textContent = 'راه‌های ارتباطی ذخیره شد.'; }
+      try { await DastinStore.saveSettings(payload); status.textContent = 'راه‌های ارتباطی ذخیره شد؛ در حال انتشار…'; DastinPublisher.publishSoon(); }
       catch (error) { status.textContent = error.message || 'ذخیره انجام نشد.'; status.classList.add('is-error'); }
       finally { button.disabled = false; }
     });
@@ -315,7 +348,8 @@
           if (file) images[card.id] = await DastinStore.optimizeImage(file);
         }
         currentShowcase = await DastinStore.saveShowcase(draft, images);
-        status.textContent = 'سکشن معرفی ذخیره شد';
+        status.textContent = 'سکشن معرفی ذخیره شد؛ در حال انتشار…';
+        DastinPublisher.publishSoon();
         await loadShowcaseSettings();
       } catch (error) { status.textContent = error.message || 'ذخیره انجام نشد'; status.classList.add('is-error'); }
       finally { button.disabled = false; }
@@ -327,18 +361,6 @@
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
   function initBackup() {
-    $('#export-git').addEventListener('click', async () => {
-      const button = $('#export-git'); button.disabled = true; button.textContent = 'در حال ساخت خروجی...';
-      try {
-        const pack = await DastinStore.createGitExport();
-        downloadBlob(new Blob([JSON.stringify(pack.manifest, null, 2)], { type: 'application/json' }), 'catalogue.json');
-        // A short gap helps browsers keep each file download distinct. The admin moves these files to assets/uploads/.
-        pack.downloads.forEach((file, index) => setTimeout(() => downloadBlob(file.blob, file.filename), 260 * (index + 1)));
-        const detail = pack.downloads.length ? (' و ' + toFaNumber(pack.downloads.length) + ' تصویر') : '';
-        alert('catalogue.json' + detail + ' دانلود شد. catalogue.json را در ریشهٔ repository و تصویرها را در assets/uploads/ بگذارید، سپس commit و push کنید.');
-      } catch (error) { alert(error.message || 'ساخت خروجی GitHub انجام نشد.'); }
-      finally { button.disabled = false; button.innerHTML = 'خروجی GitHub <b>↓</b>'; }
-    });
     $('#export-backup').addEventListener('click', async () => {
       const button = $('#export-backup'); button.disabled = true; button.textContent = 'در حال آماده‌سازی...';
       try {
@@ -356,12 +378,18 @@
       try {
         const backup = JSON.parse(await file.text());
         await DastinStore.restoreBackup(backup); resetForm(); await refreshProducts(); alert('پشتیبان با موفقیت بازیابی شد.');
+        DastinPublisher.publishSoon();
       } catch (error) { alert(error.message || 'این فایل قابل بازیابی نیست.'); }
       event.target.value = '';
     });
   }
 
-  $('#logout-button').addEventListener('click', async () => { await DastinStore.auth.signOut(); sessionStorage.removeItem(ACCESS_KEY); location.reload(); });
+  $('#logout-button').addEventListener('click', () => {
+    const remembered = $('#remember-token') && $('#remember-token').checked;
+    sessionStorage.removeItem(ACCESS_KEY);
+    if (!remembered) DastinPublisher.clearToken();
+    location.reload();
+  });
   loadMoreButton.addEventListener('click', () => { renderedCount += PAGE_SIZE; renderList(); });
-  initLogin(); initPasswordForm(); initForm(); initContactSettings(); initShowcaseSettings(); initBackup();
+  initLogin(); initPublish(); initForm(); initContactSettings(); initShowcaseSettings(); initBackup();
 }());

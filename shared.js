@@ -1,13 +1,10 @@
-/* DASTIN catalogue — cloud-first data layer (Supabase) with an offline mirror in IndexedDB.
-   Public visitors read through Supabase (anonymous read via RLS) and fall back to the
-   bundled catalogue.json snapshot when the cloud is unreachable. The studio panel logs
-   in with Supabase Auth; writes go straight to the cloud so every visitor sees them. */
+/* DASTIN catalogue — GitHub-only data layer. No cloud database involved.
+   Visitors (and the studio panel) read the published snapshot catalogue.json
+   that lives in this repository and is served by GitHub Pages, so the site
+   works everywhere including filtered networks. Studio edits are kept in
+   IndexedDB and published to the repository by dastin-publish.js. */
 (function () {
   'use strict';
-
-  var CONFIG = window.DASTIN_SUPABASE_CONFIG || {};
-  var REMOTE_ENABLED = Boolean(CONFIG.url && CONFIG.anonKey && window.supabase && typeof window.supabase.createClient === 'function');
-  var remote = REMOTE_ENABLED ? window.supabase.createClient(CONFIG.url, CONFIG.anonKey, { auth: { persistSession: true, autoRefreshToken: true } }) : null;
 
   var DB_NAME = 'dastin-catalogue';
   var DB_VERSION = 1;
@@ -53,7 +50,7 @@
     notes: ['کیک و شیرینی های رژیمی و فوق‌العاده', 'برگر های لذیذ', 'سوسیس و کالباس خانگی']
   };
 
-  /* ================= IndexedDB mirror (offline fallback) ================= */
+  /* ================= IndexedDB (studio workspace + offline mirror) ================= */
 
   var dbPromise;
   var publishedCataloguePromise;
@@ -170,118 +167,28 @@
     }
     return publishedCataloguePromise;
   }
+  function resetPublishedCache() { publishedCataloguePromise = null; }
 
-  /* ================= Supabase remote layer ================= */
-
-  function rowToProduct(row) {
-    return {
-      id: row.id,
-      title: row.title || '',
-      category: categories[row.category] ? row.category : 'fingerfood',
-      price: row.price || '',
-      weight: row.weight || '',
-      copyright: row.copyright || '',
-      description: row.description || '',
-      imageId: row.image_id || '',
-      imagePath: row.image_path || '',
-      order: Number(row.sort_order) || 10,
-      createdAt: Number(row.created_at) || 0,
-      updatedAt: row.updated_at ? Number(row.updated_at) : undefined
-    };
-  }
-  function productToRow(product) {
-    return {
-      id: product.id,
-      title: product.title,
-      category: product.category,
-      price: product.price || '',
-      weight: product.weight || '',
-      copyright: product.copyright || '',
-      description: product.description || '',
-      image_id: product.imageId || '',
-      image_path: product.imagePath || '',
-      sort_order: Number(product.order) || 10,
-      created_at: Number(product.createdAt) || Date.now(),
-      updated_at: Date.now()
-    };
-  }
-  function remoteTimeout(promise, ms) {
-    let timer;
-    const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('اتصال به دیتابیس ابری زمان‌بر شد.')), ms || 7000); });
-    return Promise.race([promise.finally(() => clearTimeout(timer)), timeout]);
-  }
-  async function remoteList() {
-    const { data, error } = await remote
-      .from('dastin_products')
-      .select('*')
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: true });
-    if (error) throw new Error('خواندن محصولات از دیتابیس ابری ممکن نشد: ' + error.message);
-    return (data || []).map(rowToProduct);
-  }
-  async function remoteGetSettings() {
-    const { data, error } = await remote.from('dastin_settings').select('value').eq('id', 1).maybeSingle();
-    if (error) throw new Error('خواندن تنظیمات ممکن نشد: ' + error.message);
-    return { ...defaultSettings, ...((data && data.value) || {}) };
-  }
-  async function remoteGetShowcase() {
-    const { data, error } = await remote.from('dastin_showcase').select('value').eq('id', 1).maybeSingle();
-    if (error) throw new Error('خواندن بخش معرفی ممکن نشد: ' + error.message);
-    return normaliseShowcase((data && data.value) || defaultShowcase);
-  }
-  async function requireAdmin() {
-    if (!REMOTE_ENABLED) return false;
-    const { data } = await remote.auth.getSession();
-    if (!data || !data.session) throw new Error('برای ذخیرهٔ تغییرات اول وارد حساب مدیر شوید.');
-    return true;
-  }
-  function mediaPublicURL(imageId) {
-    return remote.storage.from('media').getPublicUrl(imageId + '.webp').data.publicUrl;
-  }
-  async function uploadImageBlob(imageId, blob) {
-    const path = imageId + '.webp';
-    const { error } = await remote.storage.from('media').upload(path, blob, {
-      upsert: true,
-      contentType: blob && blob.type ? blob.type : 'image/webp',
-      cacheControl: '3600'
-    });
-    if (error) throw new Error('بارگذاری تصویر در ابر انجام نشد: ' + error.message);
-    return mediaPublicURL(imageId) + '?v=' + Date.now();
-  }
-  async function mirrorProducts(rows) {
-    try {
-      await transaction(['products', 'meta'], 'readwrite', tx => {
-        tx.objectStore('products').clear();
-        rows.forEach(product => tx.objectStore('products').put({ ...product }));
-        tx.objectStore('meta').put({ key: 'seeded', value: true, seededAt: Date.now() });
-      });
-    } catch (_) { /* Mirror is best-effort. */ }
-  }
-  async function mirrorProduct(product, blob) {
-    try {
-      await transaction(['products', 'media'], 'readwrite', tx => {
-        tx.objectStore('products').put({ ...product });
-        if (blob) tx.objectStore('media').put({ id: product.imageId, blob: blob, name: product.imageId + '.webp', updatedAt: Date.now() });
-      });
-    } catch (_) { /* Mirror is best-effort. */ }
-  }
-
-  /* ================= Public API (kept compatible) ================= */
+  /* ================= Public API ================= */
 
   async function list() {
-    if (REMOTE_ENABLED && !(await hasLocalChanges())) {
-      try {
-        const rows = await remoteTimeout(remoteList());
-        await mirrorProducts(rows);
-        await clearLocalChanges();
+    if (!(await hasLocalChanges())) {
+      const published = await fetchPublishedCatalogue();
+      if (published && Array.isArray(published.products) && published.products.length) {
+        const rows = published.products.slice().sort((a, b) => a.order - b.order || a.createdAt - b.createdAt);
+        try {
+          await transaction(['products', 'meta'], 'readwrite', tx => {
+            tx.objectStore('products').clear();
+            rows.forEach(product => tx.objectStore('products').put({ ...product }));
+            tx.objectStore('meta').put({ key: 'seeded', value: true, seededAt: Date.now() });
+          });
+        } catch (_) { /* mirror is best-effort */ }
         return rows;
-      } catch (_) { /* fall back to the local mirror */ }
+      }
     }
     return localList();
   }
   async function get(id) {
-    /* Look in the published snapshot first so the product modal opens instantly,
-       even for visitors who cannot reach the cloud (e.g. sanctions/filtered networks). */
     const published = await fetchPublishedCatalogue();
     if (published && Array.isArray(published.products)) {
       const hit = published.products.find(product => product.id === id);
@@ -291,91 +198,27 @@
     return rows.find(product => product.id === id) || (await localGet(id)) || null;
   }
   async function getSettings() {
-    if (REMOTE_ENABLED && !(await hasLocalChanges())) {
-      try { return await remoteTimeout(remoteGetSettings()); } catch (_) { /* local mirror */ }
+    if (!(await hasLocalChanges())) {
+      const published = await fetchPublishedCatalogue();
+      if (published && published.settings) return { ...defaultSettings, ...published.settings };
     }
     return localGetSettings();
   }
   async function getShowcase() {
-    if (REMOTE_ENABLED && !(await hasLocalChanges())) {
-      try { return await remoteTimeout(remoteGetShowcase()); } catch (_) { /* local mirror */ }
+    if (!(await hasLocalChanges())) {
+      const published = await fetchPublishedCatalogue();
+      if (published && published.showcase) return normaliseShowcase(published.showcase);
     }
     return localGetShowcase();
   }
-
-  async function saveSettings(patch) {
-    const next = {};
-    Object.keys(defaultSettings).forEach(key => { next[key] = cleanText(patch[key], 220) || defaultSettings[key]; });
-    if (REMOTE_ENABLED) {
-      await requireAdmin();
-      const { error } = await remote.from('dastin_settings').upsert({ id: 1, value: next, updated_at: Date.now() });
-      if (error) throw new Error('ذخیرهٔ تنظیمات در ابر انجام نشد: ' + error.message);
-      await clearLocalChanges();
-    }
-    await transaction(['meta'], 'readwrite', tx => {
-      tx.objectStore('meta').put({ key: 'settings', value: next, updatedAt: Date.now() });
-      if (!REMOTE_ENABLED) tx.objectStore('meta').put({ key: 'localChanges', value: true, updatedAt: Date.now() });
-    });
-    return next;
-  }
-  async function saveShowcase(input, imageUpdates = {}) {
-    const next = normaliseShowcase(input);
-    if (REMOTE_ENABLED) {
-      await requireAdmin();
-      for (const card of next.cards) {
-        const image = imageUpdates[card.id];
-        if (image && image.blob instanceof Blob) {
-          const imageId = 'showcase-' + card.id;
-          clearImageCache(imageId);
-          card.imageId = imageId;
-          card.imagePath = await uploadImageBlob(imageId, image.blob);
-        }
-      }
-      const { error } = await remote.from('dastin_showcase').upsert({ id: 1, value: next, updated_at: Date.now() });
-      if (error) throw new Error('ذخیرهٔ بخش معرفی در ابر انجام نشد: ' + error.message);
-      await clearLocalChanges();
-    }
-    await transaction(['meta', 'media'], 'readwrite', tx => {
-      next.cards.forEach(card => {
-        const image = imageUpdates[card.id];
-        if (image && image.blob instanceof Blob && !REMOTE_ENABLED) {
-          const imageId = 'showcase-' + card.id;
-          clearImageCache(imageId);
-          card.imageId = imageId;
-          card.imagePath = '';
-          tx.objectStore('media').put({ id: imageId, blob: image.blob, name: image.name || (card.id + '.webp'), updatedAt: Date.now() });
-        }
-      });
-      tx.objectStore('meta').put({ key: 'showcase', value: next, updatedAt: Date.now() });
-      if (!REMOTE_ENABLED) tx.objectStore('meta').put({ key: 'localChanges', value: true, updatedAt: Date.now() });
-    });
-    return next;
-  }
-
-  /* Public visitors read the GitHub-hosted snapshot (catalogue.json + repo images) first:
-     it is fast and reachable everywhere, including Iran where cloud endpoints can be
-     filtered. The cloud is only a fallback here; the studio panel writes to the cloud
-     and a scheduled GitHub Action refreshes this snapshot every 15 minutes. */
   async function listForPublic() {
-    const published = await fetchPublishedCatalogue();
-    if (published && Array.isArray(published.products) && published.products.length) {
-      const rows = published.products.slice().sort((a, b) => a.order - b.order || a.createdAt - b.createdAt);
-      mirrorProducts(rows);
-      return rows;
-    }
     return list();
   }
   async function getSettingsForPublic() {
-    const published = await fetchPublishedCatalogue();
-    if (published && published.settings) return { ...defaultSettings, ...published.settings };
-    if (REMOTE_ENABLED) { try { return await remoteTimeout(remoteGetSettings()); } catch (_) { /* local mirror */ } }
-    return localGetSettings();
+    return getSettings();
   }
   async function getShowcaseForPublic() {
-    const published = await fetchPublishedCatalogue();
-    if (published && published.showcase) return normaliseShowcase(published.showcase);
-    if (REMOTE_ENABLED) { try { return await remoteTimeout(remoteGetShowcase()); } catch (_) { /* local mirror */ } }
-    return localGetShowcase();
+    return getShowcase();
   }
   async function syncPublishedForAdmin() {
     return list();
@@ -388,7 +231,6 @@
     }
     if (!imageId) return '';
     if (defaultImages[imageId]) return assetPrefix + defaultImages[imageId];
-    if (REMOTE_ENABLED) return mediaPublicURL(imageId);
     if (imageURLs.has(imageId)) return imageURLs.get(imageId);
     const media = await transaction(['media'], 'readonly', tx => requestAsPromise(tx.objectStore('media').get(imageId)));
     if (!media || !media.blob) return '';
@@ -402,9 +244,18 @@
       imageURLs.delete(imageId);
     }
   }
+  async function getMediaBlob(imageId) {
+    if (!imageId || defaultImages[imageId]) return null;
+    const media = await transaction(['media'], 'readonly', tx => requestAsPromise(tx.objectStore('media').get(imageId)));
+    return media && media.blob ? media.blob : null;
+  }
 
-  function buildRecord(input, rows, id, imageId) {
-    return {
+  async function add(input) {
+    await init();
+    const rows = await list();
+    const id = 'p-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+    const imageId = 'm-' + id;
+    const record = {
       id, imageId,
       title: cleanText(input.title, 80),
       category: categories[input.category] ? input.category : 'fingerfood',
@@ -415,26 +266,7 @@
       order: rows.length ? Math.max(...rows.map(p => Number(p.order) || 0)) + 10 : 10,
       createdAt: Date.now()
     };
-  }
-  function validateRecord(record, hasImage) {
-    if (!record.title || !record.price || !record.weight || !record.copyright || !record.description || !hasImage) throw new Error('همهٔ اطلاعات و تصویر را کامل کنید.');
-  }
-  async function add(input) {
-    const rows = await list();
-    const id = 'p-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
-    const imageId = 'm-' + id;
-    const record = buildRecord(input, rows, id, imageId);
-    validateRecord(record, input.imageBlob instanceof Blob);
-    if (REMOTE_ENABLED) {
-      await requireAdmin();
-      record.imagePath = await uploadImageBlob(imageId, input.imageBlob);
-      record.updatedAt = Date.now();
-      const { error } = await remote.from('dastin_products').insert(productToRow(record));
-      if (error) throw new Error('ذخیرهٔ محصول در ابر انجام نشد: ' + error.message);
-      await mirrorProduct(record, input.imageBlob);
-      await clearLocalChanges();
-      return record;
-    }
+    if (!record.title || !record.price || !record.weight || !record.copyright || !record.description || !(input.imageBlob instanceof Blob)) throw new Error('همهٔ اطلاعات و تصویر را کامل کنید.');
     await transaction(['products', 'media'], 'readwrite', tx => {
       tx.objectStore('media').put({ id: imageId, blob: input.imageBlob, name: input.imageName || 'image.webp', updatedAt: Date.now() });
       tx.objectStore('products').put(record);
@@ -443,6 +275,7 @@
     return record;
   }
   async function update(id, patch) {
+    await init();
     const old = await get(id);
     if (!old) throw new Error('این آیتم پیدا نشد.');
     const hasNewImage = patch.imageBlob instanceof Blob;
@@ -456,20 +289,10 @@
       price: cleanText(patch.price, 70),
       weight: cleanText(patch.weight, 70),
       copyright: cleanText(patch.copyright, 140),
-      description: cleanText(patch.description, 800)
+      description: cleanText(patch.description, 800),
+      updatedAt: Date.now()
     };
     if (!next.title || !next.price || !next.weight || !next.copyright || !next.description) throw new Error('همهٔ فیلدهای اطلاعاتی ضروری‌اند.');
-    if (REMOTE_ENABLED) {
-      await requireAdmin();
-      next.imagePath = hasNewImage ? await uploadImageBlob(targetImageId, patch.imageBlob) : old.imagePath;
-      next.updatedAt = Date.now();
-      const { error } = await remote.from('dastin_products').update(productToRow(next)).eq('id', id);
-      if (error) throw new Error('به‌روزرسانی محصول در ابر انجام نشد: ' + error.message);
-      if (hasNewImage) clearImageCache(old.imageId);
-      await mirrorProduct(next, hasNewImage ? patch.imageBlob : undefined);
-      await clearLocalChanges();
-      return next;
-    }
     await transaction(['products', 'media'], 'readwrite', tx => {
       tx.objectStore('products').put(next);
       if (hasNewImage) {
@@ -481,21 +304,9 @@
     return next;
   }
   async function remove(id) {
+    await init();
     const record = await get(id);
     if (!record) return;
-    if (REMOTE_ENABLED) {
-      await requireAdmin();
-      const { error } = await remote.from('dastin_products').delete().eq('id', id);
-      if (error) throw new Error('حذف محصول از ابر انجام نشد: ' + error.message);
-      if (!defaultImages[record.imageId]) {
-        try { await remote.storage.from('media').remove([record.imageId + '.webp']); } catch (_) { /* already gone */ }
-      }
-      clearImageCache(record.imageId);
-      try { await transaction(['products', 'media'], 'readwrite', tx => { tx.objectStore('products').delete(id); if (!defaultImages[record.imageId]) tx.objectStore('media').delete(record.imageId); }); } catch (_) {}
-      await clearLocalChanges();
-      return;
-    }
-    await init();
     await transaction(['products', 'media'], 'readwrite', tx => {
       tx.objectStore('products').delete(id);
       if (!defaultImages[record.imageId]) tx.objectStore('media').delete(record.imageId);
@@ -509,22 +320,40 @@
     const target = at + direction;
     if (at < 0 || target < 0 || target >= rows.length) return false;
     const a = rows[at], b = rows[target];
-    if (REMOTE_ENABLED) {
-      await requireAdmin();
-      const stamp = Date.now();
-      const first = await remote.from('dastin_products').update({ sort_order: b.order, updated_at: stamp }).eq('id', a.id);
-      const second = await remote.from('dastin_products').update({ sort_order: a.order, updated_at: stamp }).eq('id', b.id);
-      if (first.error || second.error) throw new Error('تغییر ترتیب در ابر انجام نشد.');
-      try { await transaction(['products'], 'readwrite', tx => { tx.objectStore('products').put({ ...a, order: b.order }); tx.objectStore('products').put({ ...b, order: a.order }); }); } catch (_) {}
-      await clearLocalChanges();
-      return true;
-    }
     await transaction(['products'], 'readwrite', tx => {
       tx.objectStore('products').put({ ...a, order: b.order });
       tx.objectStore('products').put({ ...b, order: a.order });
     });
     await markLocalChanges();
     return true;
+  }
+
+  async function saveSettings(patch) {
+    const next = {};
+    Object.keys(defaultSettings).forEach(key => { next[key] = cleanText(patch[key], 220) || defaultSettings[key]; });
+    await transaction(['meta'], 'readwrite', tx => {
+      tx.objectStore('meta').put({ key: 'settings', value: next, updatedAt: Date.now() });
+      tx.objectStore('meta').put({ key: 'localChanges', value: true, updatedAt: Date.now() });
+    });
+    return next;
+  }
+  async function saveShowcase(input, imageUpdates = {}) {
+    const next = normaliseShowcase(input);
+    await transaction(['meta', 'media'], 'readwrite', tx => {
+      next.cards.forEach(card => {
+        const image = imageUpdates[card.id];
+        if (image && image.blob instanceof Blob) {
+          const imageId = 'showcase-' + card.id;
+          clearImageCache(imageId);
+          card.imageId = imageId;
+          card.imagePath = '';
+          tx.objectStore('media').put({ id: imageId, blob: image.blob, name: image.name || (card.id + '.webp'), updatedAt: Date.now() });
+        }
+      });
+      tx.objectStore('meta').put({ key: 'showcase', value: next, updatedAt: Date.now() });
+      tx.objectStore('meta').put({ key: 'localChanges', value: true, updatedAt: Date.now() });
+    });
+    return next;
   }
 
   function cleanText(value, max) { return String(value || '').trim().replace(/\s+/g, ' ').slice(0, max); }
@@ -586,30 +415,6 @@
     }
     return { format: 'dastin-catalogue', version: 3, exportedAt: new Date().toISOString(), products, settings, showcase, media };
   }
-  async function createGitExport() {
-    const products = await list();
-    const settings = await getSettings();
-    const showcase = await getShowcase();
-    const downloads = [];
-    const exportMedia = async (entry, label) => {
-      if (!entry.imageId) return;
-      if (/^https?:/i.test(entry.imagePath || '')) return; /* cloud-hosted image — already public */
-      const media = await transaction(['media'], 'readonly', tx => requestAsPromise(tx.objectStore('media').get(entry.imageId)));
-      if (media && media.blob) {
-        const filename = entry.imageId + '.webp';
-        entry.imagePath = 'assets/uploads/' + filename;
-        downloads.push({ filename, blob: media.blob });
-      } else if (!entry.imagePath) {
-        throw new Error('فایل تصویر «' + label + '» پیدا نشد.');
-      }
-    };
-    for (const product of products) {
-      if (defaultImages[product.imageId]) product.imagePath = 'assets/' + defaultImages[product.imageId];
-      else await exportMedia(product, product.title);
-    }
-    for (const card of showcase.cards) await exportMedia(card, card.title);
-    return { manifest: { format: 'dastin-public-catalogue', version: 1, exportedAt: new Date().toISOString(), settings, showcase, products }, downloads };
-  }
   async function restoreBackup(backup) {
     if (!backup || backup.format !== 'dastin-catalogue' || !Array.isArray(backup.products)) throw new Error('فایل پشتیبان دستین معتبر نیست');
     const safeProducts = backup.products.map(product => ({
@@ -633,42 +438,9 @@
     imageURLs.forEach(url => URL.revokeObjectURL(url)); imageURLs.clear();
   }
 
-  /* ================= Supabase Auth (studio admin) ================= */
-
-  var auth = {
-    available: REMOTE_ENABLED,
-    async getSession() {
-      if (!REMOTE_ENABLED) return null;
-      const { data } = await remote.auth.getSession();
-      return (data && data.session) || null;
-    },
-    async isAuthenticated() { return Boolean(await auth.getSession()); },
-    signIn(email, password) {
-      if (!REMOTE_ENABLED) throw new Error('اتصال به دیتابیس ابری در دسترس نیست.');
-      return remote.auth.signInWithPassword({ email: String(email || '').trim(), password: String(password || '') });
-    },
-    async signOut() {
-      if (REMOTE_ENABLED) { try { await remote.auth.signOut(); } catch (_) {} }
-      try { sessionStorage.removeItem('dastin-studio-access'); } catch (_) {}
-    },
-    onChange(listener) {
-      if (!REMOTE_ENABLED) return () => {};
-      const { data } = remote.auth.onAuthStateChange((_event, session) => listener(session));
-      return function dispose() { try { data.subscription.unsubscribe(); } catch (_) {} };
-    },
-    async changePassword(newPassword) {
-      if (!REMOTE_ENABLED) throw new Error('اتصال به دیتابیس ابری در دسترس نیست.');
-      const { data } = await remote.auth.getSession();
-      if (!data || !data.session) throw new Error('اول وارد حساب مدیر شوید.');
-      const { error } = await remote.auth.updateUser({ password: String(newPassword) });
-      if (error) throw new Error('تغییر رمز انجام نشد: ' + error.message);
-    }
-  };
-
   window.DastinStore = {
-    init, list, listForPublic, syncPublishedForAdmin, get, getImageURL, getSettings, getSettingsForPublic,
+    init, list, listForPublic, syncPublishedForAdmin, get, getImageURL, getMediaBlob, getSettings, getSettingsForPublic,
     getShowcase, getShowcaseForPublic, saveSettings, saveShowcase, add, update, remove, move, categoryLabel, categories,
-    optimizeImage, createBackup, createGitExport, restoreBackup, cleanText, auth,
-    isRemoteEnabled: function () { return REMOTE_ENABLED; }
+    optimizeImage, createBackup, restoreBackup, cleanText, hasLocalChanges, resetPublishedCache
   };
 }());

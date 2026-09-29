@@ -19,15 +19,27 @@
         <p class="mini-label">PRIVATE / DASTIN STUDIO</p>
         <h1>سلام، ادمین.</h1>
         <p>این فضا برای چیدن و نگهداری کاتالوگ دستین است.</p>
-        <form id="login-form">
-          <label for="admin-email">ایمیل مدیر</label>
-          <input id="admin-email" type="email" autocomplete="username" dir="ltr" required />
-          <label for="admin-password">رمز ورود</label>
-          <div class="password-field"><input id="admin-password" type="password" autocomplete="current-password" required /><button type="button" id="toggle-password" aria-label="نمایش رمز">◉</button></div>
-          <p id="login-error" class="form-error" role="alert" hidden>ورود انجام نشد. ایمیل و رمز را بررسی کنید.</p>
-          <button class="button button--primary" type="submit">ورود به استودیو <b>←</b></button>
-        </form>
-        <small>هر ذخیره‌ای که این‌جا انجام دهید، حداکثر تا ~۱۵ دقیقه بعد به‌طور خودکار در سایت عمومی منتشر می‌شود.</small>
+        <div id="token-form-wrap">
+          <form id="login-form">
+            <label for="admin-token">توکن گیت‌هاب</label>
+            <div class="password-field"><input id="admin-token" type="password" autocomplete="off" dir="ltr" required /><button type="button" id="toggle-password" aria-label="نمایش توکن">◉</button></div>
+            <label class="remember-row"><input id="remember-token" type="checkbox" /> یادآوری توکن روی این دستگاه</label>
+            <p id="login-error" class="form-error" role="alert" hidden></p>
+            <button class="button button--primary" type="submit">ورود به استودیو <b>←</b></button>
+          </form>
+          <small>توکن فقط در همین مرورگر ذخیره می‌شود و به هیچ سروری فرستاده نمی‌شود. هر ذخیره در استودیو، خودکار در گیت‌هاب کامیت و منتشر می‌شود.</small>
+          <button id="offline-toggle" class="quiet-button offline-toggle" type="button">ورود آفلاین (فقط پیش‌نمایش، بدون انتشار)</button>
+        </div>
+        <div id="offline-form-wrap" hidden>
+          <form id="offline-form">
+            <label for="admin-password">رمز پیش‌نمایش</label>
+            <div class="password-field"><input id="admin-password" type="password" autocomplete="current-password" required /><button type="button" id="toggle-password-off" aria-label="نمایش رمز">◉</button></div>
+            <p id="offline-error" class="form-error" role="alert" hidden>رمز درست نیست. دوباره امتحان کنید.</p>
+            <button class="button button--primary" type="submit">ورود <b>←</b></button>
+          </form>
+          <small>در حالت آفلاین تغییرات فقط در همین مرورگر ذخیره می‌شوند و منتشر نمی‌شوند.</small>
+          <button id="back-to-token" class="quiet-button offline-toggle" type="button">← بازگشت به ورود با توکن</button>
+        </div>
       </div>
     </section>
 
@@ -96,21 +108,16 @@
         </section>
 
         <section class="backup-panel" aria-labelledby="backup-title">
-          <div><p class="mini-label">PUBLISH / BACKUP / SECURITY</p><h2 id="backup-title">انتشار، پشتیبان و امنیت</h2><p>هر ذخیره‌ای که در این پنل انجام می‌دهید <strong>بلافاصله در سایت عمومی منتشر می‌شود</strong>؛ نیازی به گیت‌هاب نیست. «خروجی GitHub» و «دانلود پشتیبان» فقط برای نگه‌داری امن داده‌هاست.</p></div>
-          <div class="backup-actions"><button id="export-backup" class="button button--primary" type="button">دانلود پشتیبان <b>↓</b></button><button id="export-git" class="button button--quiet" type="button">خروجی GitHub <b>↓</b></button><label class="button button--quiet" for="import-backup">بازیابی پشتیبان <b>↑</b><input id="import-backup" type="file" accept="application/json,.json" hidden /></label></div>
-          <form id="password-form" class="password-form">
-            <label for="new-password">تغییر رمز مدیر<input id="new-password" type="password" autocomplete="new-password" minlength="8" dir="ltr" placeholder="رمز جدید (حداقل ۸ نویسه)" /></label>
-            <button class="button button--quiet" type="submit">تغییر رمز</button>
-          </form>
-          <p id="password-status" class="form-status" role="status" hidden></p>
+          <div><p class="mini-label">PUBLISH / BACKUP</p><h2 id="backup-title">انتشار و پشتیبان</h2><p>هر ذخیره در این پنل، خودکار در یک کامیت به ریپو اضافه می‌شود و ورک‌فلو GitHub Pages تا ~۲ دقیقه بعد آن را روی سایت منتشر می‌کند — بدون هیچ سرویس میانی. اگر انتشار خودکار با خطا روبه‌رو شد، از دکمهٔ زیر دوباره تلاش کنید.</p></div>
+          <div class="backup-actions"><button id="publish-now" class="button button--primary" type="button">انتشار به سایت <b>↑</b></button><button id="export-backup" class="button button--quiet" type="button">دانلود پشتیبان <b>↓</b></button><label class="button button--quiet" for="import-backup">بازیابی پشتیبان <b>↑</b><input id="import-backup" type="file" accept="application/json,.json" hidden /></label></div>
+          <p id="publish-status" class="form-status" role="status" hidden></p>
         </section>
       </main>
-      <footer class="admin-footer">DASTIN STUDIO · داده‌ها با دیتابیس ابری Supabase همگام می‌شوند.</footer>
+      <footer class="admin-footer">DASTIN STUDIO · تغییرات مستقیم در گیت‌هاب منتشر می‌شوند.</footer>
     </div>
 
-    <script src="../assets/vendor/supabase.umd.min.js"></script>
-    <script src="../supabase-config.js"></script>
     <script src="../shared.js"></script>
+    <script src="../dastin-publish.js"></script>
     <script src="admin.js"></script>
   </body>
 </html>
