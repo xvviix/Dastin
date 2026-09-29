@@ -1,12 +1,12 @@
 {
   "format": "dastin-public-catalogue",
   "version": 1,
-  "exportedAt": "2026-09-29T13:20:51.154Z",
+  "exportedAt": "2026-09-29T13:34:28.165Z",
   "settings": {
     "instagramText": "@dastin.food",
     "instagramUrl": "https://instagram.com/dastin.food",
-    "whatsappText": "به‌زودی",
-    "whatsappUrl": "",
+    "whatsappText": "واتساپ دستین",
+    "whatsappUrl": "https://wa.me/989000000000",
     "baleText": "به‌زودی",
     "baleUrl": "",
     "telegramText": "@dastin_food",
@@ -50,16 +50,17 @@
   "products": [
     {
       "id": "burger-smoky-mix",
-      "title": "TEST",
+      "title": ".",
       "category": "burger",
-      "price": "TEST",
-      "weight": "TEST",
+      "price": ".",
+      "weight": ".",
       "copyright": "© DASTIN / تصویر اختصاصی",
-      "description": "برگر دست‌ساز با ترکیب گوشت تازه، ادویه‌های اختصاصی و عطر لطیف دود. برای آن شب‌هایی که یک برگر معمولی کافی نیست",
+      "description": ".",
       "imageId": "default-burger",
       "imagePath": "assets/product-burger.jpg",
       "order": 10,
-      "createdAt": 1704067200000
+      "createdAt": 1704067200000,
+      "updatedAt": 1790688865654
     },
     {
       "id": "sausage-oak-smoked",
