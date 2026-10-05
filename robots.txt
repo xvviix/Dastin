@@ -1,11 +1,11 @@
 # Robots.txt for DASTIN (دستین)
-# https://xvviix.github.io/Dastin/
+# https://dastin.dpdns.org/
 
 User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://xvviix.github.io/Dastin/sitemap.xml
+Sitemap: https://dastin.dpdns.org/sitemap.xml
 
 # Crawl-delay (be nice to bots)
 Crawl-delay: 1
